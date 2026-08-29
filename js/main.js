@@ -31,6 +31,17 @@ class App {
 
     async init() {
         try {
+            // Check for OAuth callback parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('userId');
+            const secret = urlParams.get('secret');
+
+            if (userId && secret) {
+                // Remove the sensitive params from the URL immediately
+                window.history.replaceState({}, document.title, window.location.pathname);
+                await authService.finalizeSession(userId, secret);
+            }
+
             // Check current Appwrite session
             const user = await authService.getCurrentUser();
             

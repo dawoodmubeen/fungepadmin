@@ -35,10 +35,25 @@ class AuthService {
     async loginWithGoogle() {
         try {
             const redirectUrl = `${window.location.origin}${window.location.pathname}`;
-            account.createOAuth2Session('google', redirectUrl, redirectUrl);
+            // Appwrite Web SDK v14+ supports createOAuth2Token which passes userId and secret in URL
+            if (typeof account.createOAuth2Token === 'function') {
+                account.createOAuth2Token('google', redirectUrl, redirectUrl);
+            } else {
+                account.createOAuth2Session('google', redirectUrl, redirectUrl);
+            }
         } catch (error) {
             console.error("Google login error:", error);
             throw error;
+        }
+    }
+
+    async finalizeSession(userId, secret) {
+        try {
+            await account.createSession(userId, secret);
+            return true;
+        } catch (error) {
+            console.error("Session finalize error:", error);
+            return false;
         }
     }
 

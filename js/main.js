@@ -68,7 +68,7 @@ class App {
             this.renderLayout();
             this.setupAppEvents();
             
-            // Handle initial routing
+            // Handle initial routing and listen for changes
             this.handleHashChange();
             window.addEventListener('hashchange', () => this.handleHashChange());
             

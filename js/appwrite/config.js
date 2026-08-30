@@ -1,5 +1,4 @@
-// Appwrite SDK is available globally via CDN (Appwrite)
-const { Client, Account, Databases, Storage, Functions, ID, Query } = window.Appwrite;
+const { Client, Account, Databases, Storage, Functions, ID, Query, Permission, Role } = window.Appwrite;
 
 const CONFIG = {
   endpoint: 'https://sgp.cloud.appwrite.io/v1',
@@ -39,4 +38,4 @@ const databases = new Databases(client);
 const storage = new Storage(client);
 const functions = new Functions(client);
 
-export { client, account, databases, storage, functions, CONFIG, ID, Query };
+export { client, account, databases, storage, functions, CONFIG, ID, Query, Permission, Role };

@@ -53,6 +53,17 @@ class App {
                 return;
             }
 
+            // Set JWT to bypass third-party cookie issues
+            try {
+                const { client, account } = await import('./appwrite/config.js');
+                const jwtResponse = await account.createJWT();
+                if (jwtResponse && jwtResponse.jwt) {
+                    client.setJWT(jwtResponse.jwt);
+                }
+            } catch (e) {
+                console.error("Failed to set JWT", e);
+            }
+
             // User is authenticated, check if they are admin
             this.adminDoc = await authService.getAdminDocument(user.$id);
             

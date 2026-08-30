@@ -1,4 +1,4 @@
-import { databases, storage, CONFIG, Query, ID } from '../appwrite/config.js';
+import { databases, storage, CONFIG, Query, ID, Permission, Role } from '../appwrite/config.js';
 import { authService } from '../services/authService.js';
 import { showToast } from '../components/toast.js';
 
@@ -304,7 +304,12 @@ export const pastPapersController = {
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
                     if (file.type !== 'application/pdf') throw new Error("Only PDF files are allowed");
-                    const upRes = await storage.createFile(CONFIG.pastPapersBucket, ID.unique(), file);
+                    const permissions = [
+                        Permission.read(Role.any()),
+                        Permission.update(Role.team('6a11fc7200202af19f62')),
+                        Permission.delete(Role.team('6a11fc7200202af19f62'))
+                    ];
+                    const upRes = await storage.createFile(CONFIG.pastPapersBucket, ID.unique(), file, permissions);
                     fileId = upRes.$id;
                 }
 
@@ -332,7 +337,12 @@ export const pastPapersController = {
                 } else {
                     data.created_at = new Date().toISOString();
                     data.uploaded_by = user.$id;
-                    await databases.createDocument(CONFIG.databaseId, CONFIG.pastPapersCol, ID.unique(), data);
+                    const permissions = [
+                        Permission.read(Role.any()),
+                        Permission.update(Role.team('6a11fc7200202af19f62')),
+                        Permission.delete(Role.team('6a11fc7200202af19f62'))
+                    ];
+                    await databases.createDocument(CONFIG.databaseId, CONFIG.pastPapersCol, ID.unique(), data, permissions);
                     showToast("Paper published", "success");
                 }
                 window.location.hash = '#past-papers';

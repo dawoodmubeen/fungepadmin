@@ -90,13 +90,27 @@ class App {
     }
 
     setupLoginEvents() {
-        document.getElementById('google-login-btn').addEventListener('click', async () => {
-            try {
-                await authService.loginWithGoogle();
-            } catch (error) {
-                showToast("Login failed. Please try again.", "error");
-            }
-        });
+        const form = document.getElementById('email-login-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('login-submit-btn');
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                btn.disabled = true;
+                btn.textContent = 'Signing in...';
+
+                try {
+                    await authService.loginWithEmail(email, password);
+                    window.location.reload(); // Reload to initialize app with active session
+                } catch (error) {
+                    showToast(error.message || "Login failed. Please check your credentials.", "error");
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                }
+            });
+        }
     }
 
     renderLayout() {

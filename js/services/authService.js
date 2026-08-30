@@ -32,17 +32,12 @@ class AuthService {
         }
     }
 
-    async loginWithGoogle() {
+    async loginWithEmail(email, password) {
         try {
-            const redirectUrl = `${window.location.origin}${window.location.pathname}`;
-            // Appwrite Web SDK v14+ supports createOAuth2Token which passes userId and secret in URL
-            if (typeof account.createOAuth2Token === 'function') {
-                account.createOAuth2Token('google', redirectUrl, redirectUrl);
-            } else {
-                account.createOAuth2Session('google', redirectUrl, redirectUrl);
-            }
+            await account.createEmailPasswordSession(email, password);
+            return true;
         } catch (error) {
-            console.error("Google login error:", error);
+            console.error("Email login error:", error);
             throw error;
         }
     }

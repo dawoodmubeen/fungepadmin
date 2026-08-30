@@ -95,7 +95,7 @@ export const usersController = {
     async loadPage(page) {
         try {
             const queries = [
-                Query.orderDesc('created_at'),
+                Query.orderDesc('$createdAt'),
                 Query.limit(this.limit),
                 Query.offset((page - 1) * this.limit)
             ];

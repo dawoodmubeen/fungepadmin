@@ -1,4 +1,4 @@
-import { databases, CONFIG, Query } from '../appwrite/config.js';
+import { databases, CONFIG, Query, ID } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
 
 export const premiumRequestsController = {
@@ -260,13 +260,42 @@ export const premiumRequestsController = {
                 return;
             }
 
-            const now = new Date().toISOString();
+            const now = new Date();
+
+            if (newStatus === 'approved') {
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+                // Create subscription
+                await databases.createDocument(
+                    CONFIG.databaseId, 
+                    CONFIG.subscriptionsCol, 
+                    ID.unique(), 
+                    {
+                        user_id: req.user_id,
+                        user_name: req.user_name,
+                        email: req.email,
+                        plan: req.plan || 'Premium',
+                        status: 'active',
+                        start_date: now.toISOString(),
+                        expiry_date: expiryDate.toISOString()
+                    }
+                );
+
+                // Update user
+                const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', req.user_id)]);
+                if (uRes.documents.length > 0) {
+                    await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
+                        is_premium: true
+                    });
+                }
+            }
 
             // 3. Update the request
             await databases.updateDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, req.$id, {
                 status: newStatus,
                 admin_note: note || (newStatus === 'approved' ? 'Approved automatically' : ''),
-                reviewed_at: now
+                reviewed_at: now.toISOString()
             });
 
             showToast(`Request successfully ${newStatus}!`, "success");

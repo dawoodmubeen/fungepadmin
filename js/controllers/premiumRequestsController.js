@@ -261,25 +261,12 @@ export const premiumRequestsController = {
             }
 
             const now = new Date().toISOString();
-            
-            // 2. If approved, update user premium status
-            if (newStatus === 'approved') {
-                // Find user doc by auth_id (user_id field in req might be auth_id)
-                const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', req.user_id)]);
-                if (uRes.documents.length > 0) {
-                    await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
-                        is_premium: true,
-                        updated_at: now
-                    });
-                }
-            }
 
             // 3. Update the request
             await databases.updateDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, req.$id, {
                 status: newStatus,
                 admin_note: note || (newStatus === 'approved' ? 'Approved automatically' : ''),
-                reviewed_at: now,
-                // reviewed_by: authService.currentUser.name - if available
+                reviewed_at: now
             });
 
             showToast(`Request successfully ${newStatus}!`, "success");

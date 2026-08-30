@@ -12,6 +12,7 @@ import { premiumRequestsController } from './controllers/premiumRequestsControll
 import { feedbackController } from './controllers/feedbackController.js';
 import { reviewsController } from './controllers/reviewsController.js';
 import { couponsController } from './controllers/couponsController.js';
+import { subscriptionsController } from './controllers/subscriptionsController.js';
 
 class App {
     constructor() {
@@ -25,7 +26,8 @@ class App {
             'premium-requests': premiumRequestsController,
             'feedback': feedbackController,
             'reviews': reviewsController,
-            'coupons': couponsController
+            'coupons': couponsController,
+            'subscriptions': subscriptionsController
         };
     }
 

@@ -32,6 +32,10 @@ export function renderSidebar(adminDoc) {
                         <i data-lucide="credit-card" class="text-gray-400 group-hover:text-primary mr-3 flex-shrink-0 h-5 w-5"></i>
                         Premium Requests
                     </a>
+                    <a href="#subscriptions" class="nav-link group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary hover:bg-gray-50" data-target="subscriptions">
+                        <i data-lucide="calendar-days" class="text-gray-400 group-hover:text-primary mr-3 flex-shrink-0 h-5 w-5"></i>
+                        Subscriptions
+                    </a>
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-gray-200">

@@ -27,7 +27,7 @@ const CONFIG = {
   pastPapersBucket: 'past-papers',
 
   // Functions
-  premiumOpsFunctionId: '6a942168332f1cb7a6f8' // Placeholder, user will need to update this
+  premiumOpsFunctionId: '6a941f71001c52d43dbd' // Placeholder, user will need to update this
 };
 
 const client = new Client()

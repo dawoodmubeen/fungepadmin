@@ -1,4 +1,4 @@
-import { Client, Databases, ID } from 'node-appwrite';
+import { Client, Databases, ID, Query } from 'node-appwrite';
 
 export default async ({ req, res, log, error }) => {
     let payload;
@@ -63,7 +63,7 @@ export default async ({ req, res, log, error }) => {
 
             // 3. Update user
             const usersRes = await databases.listDocuments(dbId, usersCol, [
-                `equal("auth_id", "${request.user_id}")`
+                Query.equal("auth_id", request.user_id)
             ]);
             
             if (usersRes.documents.length > 0) {
@@ -89,7 +89,7 @@ export default async ({ req, res, log, error }) => {
             if (request.coupon_code) {
                 try {
                     const couponRes = await databases.listDocuments(dbId, couponsCol, [
-                        `equal("code", "${request.coupon_code}")`
+                        Query.equal("code", request.coupon_code)
                     ]);
                     if (couponRes.documents.length > 0) {
                         const coupon = couponRes.documents[0];
@@ -156,7 +156,7 @@ export default async ({ req, res, log, error }) => {
 
             // 3. Update user
             const usersRes = await databases.listDocuments(dbId, usersCol, [
-                `equal("auth_id", "${sub.user_id}")`
+                Query.equal("auth_id", sub.user_id)
             ]);
             
             if (usersRes.documents.length > 0) {
@@ -176,7 +176,7 @@ export default async ({ req, res, log, error }) => {
         return res.json({ success: false, error: 'Unknown action.' }, 400);
 
     } catch (err) {
-        error(err.message);
-        return res.json({ success: false, error: err.message }, 500);
+        error(err.stack || err.message);
+        return res.json({ success: false, error: err.message, stack: err.stack || '' }, 500);
     }
 };

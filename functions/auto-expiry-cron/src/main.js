@@ -15,10 +15,10 @@ export default async ({ req, res, log, error }) => {
     try {
         const now = new Date().toISOString();
         
-        // 1. Query subscriptions where status='active' AND expiry_date <= now
+        // 1. Query subscriptions where status='active' AND expires_at <= now
         const subsRes = await databases.listDocuments(dbId, subsCol, [
             Query.equal('status', 'active'),
-            Query.lessThanEqual('expiry_date', now)
+            Query.lessThanEqual('expires_at', now)
         ]);
 
         const expiredSubs = subsRes.documents;

@@ -53,7 +53,7 @@ export default async ({ req, res, log, error }) => {
                 plan: request.plan || 'Premium',
                 status: 'active',
                 started_at: now.toISOString(),
-                expiry_date: expiryDate.toISOString(),
+                expires_at: expiryDate.toISOString(),
                 amount_paid: request.final_amount || request.amount,
                 original_amount: request.amount,
                 discount_amount: request.discount_amount || 0,

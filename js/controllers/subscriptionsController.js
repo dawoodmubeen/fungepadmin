@@ -146,7 +146,7 @@ export const subscriptionsController = {
                     ${new Date(doc.started_at || doc.start_date || doc.$createdAt).toLocaleDateString()}
                 </td>
                 <td class="table-cell text-sm text-gray-600">
-                    ${new Date(doc.expiry_date).toLocaleDateString()}
+                    ${new Date(doc.expires_at || doc.expiry_date || new Date()).toLocaleDateString()}
                 </td>
                 <td class="table-cell text-right">
                     <a href="#subscriptions/edit/${doc.$id}" class="text-primary hover:text-secondary text-sm font-medium">
@@ -204,7 +204,7 @@ export const subscriptionsController = {
                         </div>
                         <div>
                             <label class="form-label">Expiry Date *</label>
-                            <input type="date" id="s-expiry" class="form-input" required value="${sub.expiry_date ? sub.expiry_date.split('T')[0] : ''}">
+                            <input type="date" id="s-expiry" class="form-input" required value="${(sub.expires_at || sub.expiry_date) ? (sub.expires_at || sub.expiry_date).split('T')[0] : ''}">
                         </div>
                         <div id="cancel-reason-container" class="col-span-1 md:col-span-2 hidden">
                             <label class="form-label">Cancellation Reason *</label>
@@ -276,7 +276,7 @@ export const subscriptionsController = {
                         plan: document.getElementById('s-plan').value,
                         status: newStatus,
                         started_at: new Date(document.getElementById('s-start').value).toISOString(),
-                        expiry_date: new Date(document.getElementById('s-expiry').value).toISOString()
+                        expires_at: new Date(document.getElementById('s-expiry').value).toISOString()
                     };
 
                     await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id, data);

@@ -39,7 +39,7 @@ export const subscriptionsController = {
                                 <th>Plan</th>
                                 <th>Status</th>
                                 <th>Start Date</th>
-                                <th>End Date</th>
+                                <th>Expiry Date</th>
                                 <th class="text-right">Actions</th>
                             </tr>
                         </thead>
@@ -145,7 +145,7 @@ export const subscriptionsController = {
                     ${new Date(doc.start_date).toLocaleDateString()}
                 </td>
                 <td class="table-cell text-sm text-gray-600">
-                    ${new Date(doc.end_date).toLocaleDateString()}
+                    ${new Date(doc.expiry_date).toLocaleDateString()}
                 </td>
                 <td class="table-cell text-right">
                     <a href="#subscriptions/edit/${doc.$id}" class="text-primary hover:text-secondary text-sm font-medium">
@@ -202,8 +202,8 @@ export const subscriptionsController = {
                             <input type="date" id="s-start" class="form-input" required value="${sub.start_date ? sub.start_date.split('T')[0] : ''}">
                         </div>
                         <div>
-                            <label class="form-label">End Date *</label>
-                            <input type="date" id="s-end" class="form-input" required value="${sub.end_date ? sub.end_date.split('T')[0] : ''}">
+                            <label class="form-label">Expiry Date *</label>
+                            <input type="date" id="s-expiry" class="form-input" required value="${sub.expiry_date ? sub.expiry_date.split('T')[0] : ''}">
                         </div>
                     </div>
                     
@@ -229,7 +229,7 @@ export const subscriptionsController = {
                     plan: document.getElementById('s-plan').value,
                     status: newStatus,
                     start_date: new Date(document.getElementById('s-start').value).toISOString(),
-                    end_date: new Date(document.getElementById('s-end').value).toISOString(),
+                    expiry_date: new Date(document.getElementById('s-expiry').value).toISOString(),
                     updated_at: new Date().toISOString()
                 };
 

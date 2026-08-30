@@ -69,7 +69,8 @@ export const subscriptionsController = {
             const q = e.target.value.toLowerCase();
             const filtered = this.subs.filter(s => 
                 (s.user_name && s.user_name.toLowerCase().includes(q)) || 
-                (s.email && s.email.toLowerCase().includes(q))
+                (s.email && s.email.toLowerCase().includes(q)) ||
+                (s.user_email && s.user_email.toLowerCase().includes(q))
             );
             this.renderTableRows(document.getElementById('subs-tbody'), filtered);
         });
@@ -131,7 +132,7 @@ export const subscriptionsController = {
             <tr class="table-row">
                 <td class="table-cell">
                     <p class="font-medium text-gray-900">${doc.user_name || 'Unknown'}</p>
-                    <p class="text-xs text-gray-500">${doc.email}</p>
+                    <p class="text-xs text-gray-500">${doc.email || doc.user_email || 'No email'}</p>
                 </td>
                 <td class="table-cell font-medium">
                     ${doc.plan}
@@ -183,7 +184,7 @@ export const subscriptionsController = {
                         </div>
                         <div>
                             <label class="form-label">User Email</label>
-                            <input type="text" class="form-input bg-gray-50" readonly value="${sub.email}">
+                            <input type="text" class="form-input bg-gray-50" readonly value="${sub.email || sub.user_email || ''}">
                         </div>
                         <div>
                             <label class="form-label">Plan *</label>
@@ -229,8 +230,7 @@ export const subscriptionsController = {
                     plan: document.getElementById('s-plan').value,
                     status: newStatus,
                     start_date: new Date(document.getElementById('s-start').value).toISOString(),
-                    expiry_date: new Date(document.getElementById('s-expiry').value).toISOString(),
-                    updated_at: new Date().toISOString()
+                    expiry_date: new Date(document.getElementById('s-expiry').value).toISOString()
                 };
 
                 await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id, data);

@@ -1,14 +1,17 @@
 import { Client, Databases, ID } from 'node-appwrite';
 
 export default async ({ req, res, log, error }) => {
-    // Check if body exists
-    if (!req.bodyString) {
-        return res.json({ success: false, error: 'Missing request body' }, 400);
-    }
-
     let payload;
     try {
-        payload = JSON.parse(req.bodyString);
+        if (typeof req.body === 'string' && req.body.length > 0) {
+            payload = JSON.parse(req.body);
+        } else if (typeof req.bodyString === 'string' && req.bodyString.length > 0) {
+            payload = JSON.parse(req.bodyString);
+        } else if (typeof req.body === 'object' && req.body !== null && Object.keys(req.body).length > 0) {
+            payload = req.body;
+        } else {
+            return res.json({ success: false, error: 'Missing request body' }, 400);
+        }
     } catch (err) {
         return res.json({ success: false, error: 'Invalid JSON payload' }, 400);
     }

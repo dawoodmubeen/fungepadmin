@@ -44,8 +44,6 @@ class App {
 
             // Check current Appwrite session
             const user = await authService.getCurrentUser();
-            
-            document.getElementById('initial-loading').style.display = 'none';
 
             if (!user) {
                 document.getElementById('login-view').classList.remove('hidden');

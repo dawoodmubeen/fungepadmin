@@ -54,6 +54,7 @@ export default async ({ req, res, log, error }) => {
                 status: 'active',
                 started_at: now.toISOString(),
                 expires_at: expiryDate.toISOString(),
+                created_at: now.toISOString(),
                 amount_paid: request.final_amount || request.amount,
                 original_amount: request.amount,
                 discount_amount: request.discount_amount || 0,

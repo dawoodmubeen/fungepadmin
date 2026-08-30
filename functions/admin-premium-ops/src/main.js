@@ -175,6 +175,39 @@ export default async ({ req, res, log, error }) => {
             }
 
             return res.json({ success: true, message: 'Cancelled successfully.' });
+
+        } else if (action === 'edit') {
+            const sub = await databases.getDocument(dbId, subsCol, subscriptionId);
+            const now = new Date();
+            
+            // 1. Update subscription
+            await databases.updateDocument(dbId, subsCol, sub.$id, {
+                plan: payload.plan,
+                status: payload.status,
+                started_at: payload.started_at,
+                expires_at: payload.expires_at,
+                start_date: payload.started_at,
+                expiry_date: payload.expires_at
+            });
+
+            // 2. Sync user is_premium
+            const usersRes = await databases.listDocuments(dbId, usersCol, [
+                Query.equal("auth_id", sub.user_id)
+            ]);
+            
+            if (usersRes.documents.length > 0) {
+                const userDocId = usersRes.documents[0].$id;
+                const isPremium = (payload.status === 'active');
+                await databases.updateDocument(dbId, usersCol, userDocId, {
+                    is_premium: isPremium,
+                    current_plan: isPremium ? payload.plan : null,
+                    premium_expires_at: isPremium ? payload.expires_at : null,
+                    active_subscription_id: isPremium ? sub.$id : null,
+                    updated_at: now.toISOString()
+                });
+            }
+
+            return res.json({ success: true, message: 'Updated successfully.' });
         }
 
         return res.json({ success: false, error: 'Unknown action.' }, 400);

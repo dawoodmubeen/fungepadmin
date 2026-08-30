@@ -272,22 +272,24 @@ export const subscriptionsController = {
                     
                 } else {
                     // Regular update (fallback for manually tweaking dates/plans)
-                    const data = {
+                    const payload = JSON.stringify({
+                        action: 'edit',
+                        subscriptionId: id,
                         plan: document.getElementById('s-plan').value,
                         status: newStatus,
                         started_at: new Date(document.getElementById('s-start').value).toISOString(),
                         expires_at: new Date(document.getElementById('s-expiry').value).toISOString()
-                    };
+                    });
 
-                    await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id, data);
-                    
-                    const isPremium = (newStatus === 'active');
-                    const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', sub.user_id)]);
-                    if (uRes.documents.length > 0) {
-                        await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
-                            is_premium: isPremium
-                        });
-                    }
+                    const execution = await functions.createExecution(
+                        CONFIG.premiumOpsFunctionId,
+                        payload,
+                        false
+                    );
+
+                    if (execution.status === 'failed') throw new Error(execution.responseBody || "Server function failed.");
+                    const response = JSON.parse(execution.responseBody);
+                    if (!response.success) throw new Error(response.error || "Operation failed.");
                 }
                 
                 showToast("Subscription updated successfully", "success");

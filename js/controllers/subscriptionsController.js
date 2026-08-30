@@ -143,7 +143,7 @@ export const subscriptionsController = {
                     </span>
                 </td>
                 <td class="table-cell text-sm text-gray-600">
-                    ${new Date(doc.start_date).toLocaleDateString()}
+                    ${new Date(doc.started_at || doc.start_date || doc.$createdAt).toLocaleDateString()}
                 </td>
                 <td class="table-cell text-sm text-gray-600">
                     ${new Date(doc.expiry_date).toLocaleDateString()}
@@ -200,7 +200,7 @@ export const subscriptionsController = {
                         </div>
                         <div>
                             <label class="form-label">Start Date *</label>
-                            <input type="date" id="s-start" class="form-input" required value="${sub.start_date ? sub.start_date.split('T')[0] : ''}">
+                            <input type="date" id="s-start" class="form-input" required value="${(sub.started_at || sub.start_date) ? (sub.started_at || sub.start_date).split('T')[0] : ''}">
                         </div>
                         <div>
                             <label class="form-label">Expiry Date *</label>
@@ -275,7 +275,7 @@ export const subscriptionsController = {
                     const data = {
                         plan: document.getElementById('s-plan').value,
                         status: newStatus,
-                        start_date: new Date(document.getElementById('s-start').value).toISOString(),
+                        started_at: new Date(document.getElementById('s-start').value).toISOString(),
                         expiry_date: new Date(document.getElementById('s-expiry').value).toISOString()
                     };
 

@@ -52,7 +52,7 @@ export default async ({ req, res, log, error }) => {
                 user_email: request.email,
                 plan: request.plan || 'Premium',
                 status: 'active',
-                start_date: now.toISOString(),
+                started_at: now.toISOString(),
                 expiry_date: expiryDate.toISOString(),
                 amount_paid: request.final_amount || request.amount,
                 original_amount: request.amount,

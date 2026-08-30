@@ -1,4 +1,4 @@
-import { databases, CONFIG, Query, ID } from '../appwrite/config.js';
+import { databases, CONFIG, Query, ID, functions } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
 
 export const premiumRequestsController = {
@@ -80,7 +80,7 @@ export const premiumRequestsController = {
     async loadPage(page) {
         try {
             const queries = [
-                Query.orderDesc('submitted_at'),
+                Query.orderAsc('submitted_at'),
                 Query.limit(this.limit),
                 Query.offset((page - 1) * this.limit)
             ];
@@ -180,9 +180,19 @@ export const premiumRequestsController = {
                             <div class="grid grid-cols-2 gap-4 text-sm mb-4">
                                 <div><p class="text-gray-500">Plan</p><p class="font-medium">${req.plan}</p></div>
                                 <div><p class="text-gray-500">Transaction ID</p><p class="font-medium">${req.transaction_id || 'N/A'}</p></div>
+                                <div><p class="text-gray-500">Payment Method</p><p class="font-medium capitalize">${req.payment_method || 'N/A'}</p></div>
                                 <div><p class="text-gray-500">Amount Sent</p><p class="font-medium">PKR ${req.final_amount || req.amount}</p></div>
                                 <div><p class="text-gray-500">Submitted</p><p class="font-medium">${new Date(req.submitted_at || req.$createdAt).toLocaleString()}</p></div>
-                                ${req.coupon_code ? `<div class="col-span-2"><p class="text-gray-500">Coupon Used</p><p class="font-medium text-primary">${req.coupon_code}</p></div>` : ''}
+                                ${req.coupon_code ? `
+                                    <div class="col-span-2 bg-green-50 p-3 rounded-lg border border-green-100 mt-2">
+                                        <p class="text-sm font-semibold text-green-800 mb-1"><i data-lucide="tag" class="inline w-4 h-4 mr-1"></i>Coupon Applied</p>
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <div><span class="text-green-600 block">Code</span><span class="font-bold text-gray-900">${req.coupon_code}</span></div>
+                                            <div><span class="text-green-600 block">Original</span><span class="font-bold text-gray-900 text-strike">PKR ${req.amount}</span></div>
+                                            <div><span class="text-green-600 block">Discount</span><span class="font-bold text-gray-900">PKR ${req.discount_amount}</span></div>
+                                        </div>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
@@ -228,7 +238,7 @@ export const premiumRequestsController = {
             if (req.status === 'pending') {
                 document.getElementById('btn-approve').addEventListener('click', async () => {
                     if (confirm("Are you sure you want to APPROVE this request? The user will be granted premium access immediately.")) {
-                        await this.processRequest(req, 'approved');
+                        await this.processRequest(req, 'approve');
                     }
                 });
                 document.getElementById('btn-reject').addEventListener('click', async () => {
@@ -238,7 +248,7 @@ export const premiumRequestsController = {
                         return;
                     }
                     if (confirm("Are you sure you want to REJECT this request?")) {
-                        await this.processRequest(req, 'rejected', note);
+                        await this.processRequest(req, 'reject', note);
                     }
                 });
             }
@@ -250,60 +260,38 @@ export const premiumRequestsController = {
         }
     },
 
-    async processRequest(req, newStatus, note = '') {
+    async processRequest(req, action, note = '') {
         try {
-            // 1. Verify it's still pending
-            const currentReq = await databases.getDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, req.$id);
-            if (currentReq.status !== 'pending') {
-                showToast("This request has already been processed by another administrator.", "error");
-                setTimeout(() => window.location.reload(), 2000);
-                return;
-            }
-
-            const now = new Date();
-
-            if (newStatus === 'approved') {
-                const expiryDate = new Date();
-                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-
-                // Create subscription
-                await databases.createDocument(
-                    CONFIG.databaseId, 
-                    CONFIG.subscriptionsCol, 
-                    ID.unique(), 
-                    {
-                        user_id: req.user_id,
-                        user_name: req.user_name,
-                        email: req.email,
-                        plan: req.plan || 'Premium',
-                        status: 'active',
-                        start_date: now.toISOString(),
-                        expiry_date: expiryDate.toISOString()
-                    }
-                );
-
-                // Update user
-                const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', req.user_id)]);
-                if (uRes.documents.length > 0) {
-                    await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
-                        is_premium: true
-                    });
-                }
-            }
-
-            // 3. Update the request
-            await databases.updateDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, req.$id, {
-                status: newStatus,
-                admin_note: note || (newStatus === 'approved' ? 'Approved automatically' : ''),
-                reviewed_at: now.toISOString()
+            const payload = JSON.stringify({
+                action: action,
+                requestId: req.$id,
+                adminNote: note
             });
 
-            showToast(`Request successfully ${newStatus}!`, "success");
+            // Call the unified admin-premium-ops function
+            const execution = await functions.createExecution(
+                CONFIG.premiumOpsFunctionId,
+                payload,
+                false // async = false, wait for response
+            );
+
+            if (execution.status === 'failed') {
+                console.error("Function execution failed:", execution.responseBody);
+                throw new Error(execution.responseBody || "Server function failed.");
+            }
+
+            const response = JSON.parse(execution.responseBody);
+            
+            if (!response.success) {
+                throw new Error(response.error || "Operation failed.");
+            }
+
+            showToast(`Request successfully ${action === 'approve' ? 'approved' : 'rejected'}!`, "success");
             setTimeout(() => window.location.hash = '#premium-requests', 1500);
 
         } catch (error) {
             console.error(error);
-            showToast("Error processing request.", "error");
+            showToast(error.message || "Error processing request.", "error");
         }
     }
 };

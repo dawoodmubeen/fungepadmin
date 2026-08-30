@@ -1,4 +1,4 @@
-import { databases, CONFIG, Query } from '../appwrite/config.js';
+import { databases, CONFIG, Query, functions } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
 
 export const subscriptionsController = {
@@ -206,16 +206,34 @@ export const subscriptionsController = {
                             <label class="form-label">Expiry Date *</label>
                             <input type="date" id="s-expiry" class="form-input" required value="${sub.expiry_date ? sub.expiry_date.split('T')[0] : ''}">
                         </div>
+                        <div id="cancel-reason-container" class="col-span-1 md:col-span-2 hidden">
+                            <label class="form-label">Cancellation Reason *</label>
+                            <textarea id="s-cancel-reason" class="form-input" rows="3" placeholder="Reason for cancellation..."></textarea>
+                        </div>
                     </div>
                     
                     <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                        <a href="#subscriptions" class="btn-secondary">Cancel</a>
+                        <a href="#subscriptions" class="btn-secondary">Back</a>
                         <button type="submit" class="btn-primary" id="save-btn">Save Changes</button>
                     </div>
                 </form>
             </div>
         `;
         if (window.lucide) window.lucide.createIcons();
+
+        const statusSelect = document.getElementById('s-status');
+        const reasonContainer = document.getElementById('cancel-reason-container');
+        const origStatus = sub.status;
+
+        statusSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'cancelled' && origStatus === 'active') {
+                reasonContainer.classList.remove('hidden');
+                document.getElementById('s-cancel-reason').required = true;
+            } else {
+                reasonContainer.classList.add('hidden');
+                document.getElementById('s-cancel-reason').required = false;
+            }
+        });
 
         document.getElementById('sub-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -224,28 +242,52 @@ export const subscriptionsController = {
             btn.textContent = 'Saving...';
 
             try {
-                const newStatus = document.getElementById('s-status').value;
+                const newStatus = statusSelect.value;
                 
-                const data = {
-                    plan: document.getElementById('s-plan').value,
-                    status: newStatus,
-                    start_date: new Date(document.getElementById('s-start').value).toISOString(),
-                    expiry_date: new Date(document.getElementById('s-expiry').value).toISOString()
-                };
+                if (newStatus === 'cancelled' && origStatus === 'active') {
+                    // Use Appwrite Function for cancellation
+                    const cancelReason = document.getElementById('s-cancel-reason').value.trim();
+                    if (!cancelReason) {
+                        alert("Cancellation reason is required.");
+                        btn.disabled = false;
+                        btn.textContent = 'Save Changes';
+                        return;
+                    }
 
-                await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id, data);
-                
-                // CRITICAL: Also update the user's is_premium flag in the users collection
-                // If the subscription is active, they are premium. If expired/cancelled, they are not.
-                const isPremium = (newStatus === 'active');
-                
-                // We need to find the user in the users table using auth_id
-                const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', sub.user_id)]);
-                if (uRes.documents.length > 0) {
-                    await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
-                        is_premium: isPremium,
-                        updated_at: new Date().toISOString()
+                    const payload = JSON.stringify({
+                        action: 'cancel',
+                        subscriptionId: id,
+                        cancellationReason: cancelReason
                     });
+
+                    const execution = await functions.createExecution(
+                        CONFIG.premiumOpsFunctionId,
+                        payload,
+                        false
+                    );
+
+                    if (execution.status === 'failed') throw new Error(execution.responseBody || "Server function failed.");
+                    const response = JSON.parse(execution.responseBody);
+                    if (!response.success) throw new Error(response.error || "Operation failed.");
+                    
+                } else {
+                    // Regular update (fallback for manually tweaking dates/plans)
+                    const data = {
+                        plan: document.getElementById('s-plan').value,
+                        status: newStatus,
+                        start_date: new Date(document.getElementById('s-start').value).toISOString(),
+                        expiry_date: new Date(document.getElementById('s-expiry').value).toISOString()
+                    };
+
+                    await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id, data);
+                    
+                    const isPremium = (newStatus === 'active');
+                    const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [Query.equal('auth_id', sub.user_id)]);
+                    if (uRes.documents.length > 0) {
+                        await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
+                            is_premium: isPremium
+                        });
+                    }
                 }
                 
                 showToast("Subscription updated successfully", "success");

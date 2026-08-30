@@ -1,0 +1,10 @@
+{
+  "name": "auto-expiry-cron",
+  "version": "1.0.0",
+  "description": "Cron job to auto-expire premium subscriptions.",
+  "main": "src/main.js",
+  "type": "module",
+  "dependencies": {
+    "node-appwrite": "^11.0.0"
+  }
+}

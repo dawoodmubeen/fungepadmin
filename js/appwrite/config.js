@@ -1,5 +1,5 @@
 // Appwrite SDK is available globally via CDN (Appwrite)
-const { Client, Account, Databases, Storage, ID, Query } = window.Appwrite;
+const { Client, Account, Databases, Storage, Functions, ID, Query } = window.Appwrite;
 
 const CONFIG = {
   endpoint: 'https://sgp.cloud.appwrite.io/v1',
@@ -24,7 +24,10 @@ const CONFIG = {
   resultTemplatesBucket: 'result-templates',
   profileImagesBucket: 'profile-images',
   paymentReceiptsBucket: 'payment-receipts',
-  pastPapersBucket: 'past-papers'
+  pastPapersBucket: 'past-papers',
+
+  // Functions
+  premiumOpsFunctionId: 'admin-premium-ops' // Placeholder, user will need to update this
 };
 
 const client = new Client()
@@ -34,5 +37,6 @@ const client = new Client()
 const account = new Account(client);
 const databases = new Databases(client);
 const storage = new Storage(client);
+const functions = new Functions(client);
 
-export { client, account, databases, storage, CONFIG, ID, Query };
+export { client, account, databases, storage, functions, CONFIG, ID, Query };

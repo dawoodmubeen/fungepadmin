@@ -7,8 +7,8 @@ export default async ({ req, res, log, error }) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const client = new Client()
-        .setEndpoint(process.env.APPWRITE_ENDPOINT)
-        .setProject(process.env.APPWRITE_PROJECT_ID)
+        .setEndpoint(process.env.APPWRITE_FUNCTION_ENDPOINT || process.env.APPWRITE_ENDPOINT)
+        .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID)
         .setKey(process.env.APPWRITE_API_KEY);
         
     const databases = new Databases(client);
@@ -30,7 +30,16 @@ export default async ({ req, res, log, error }) => {
     try {
         log(`Generating solutions for test: ${testDoc.$id}`);
         
-        const mcqFileBuffer = await storage.getFileDownload('mock-jsons', testDoc.mcq_file_id);
+        let mcqFileBuffer;
+        try {
+            log(`Attempting to download file ${testDoc.mcq_file_id} from Appwrite...`);
+            mcqFileBuffer = await storage.getFileDownload('mock-jsons', testDoc.mcq_file_id);
+            log("Successfully downloaded file from Appwrite.");
+        } catch (downloadErr) {
+            error(`APPWRITE DOWNLOAD ERROR: ${downloadErr.message}`);
+            throw downloadErr;
+        }
+        
         const mcqJson = JSON.parse(mcqFileBuffer.toString('utf8'));
         
         const questions = mcqJson.questions || [];
@@ -56,12 +65,20 @@ Make sure correct_option EXACTLY matches the answer provided in the question.
 Questions:
 ${JSON.stringify(batch)}`;
             
-            const result = await model.generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            });
+            let result;
+            try {
+                log("Calling Gemini API...");
+                result = await model.generateContent({
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                });
+                log("Gemini API call successful.");
+            } catch (geminiErr) {
+                error(`GEMINI API ERROR: ${geminiErr.message}`);
+                throw geminiErr;
+            }
             
             const response = await result.response;
             const text = response.text();
@@ -93,6 +110,7 @@ ${JSON.stringify(batch)}`;
         const buffer = Buffer.from(JSON.stringify(solutionDoc, null, 2), 'utf-8');
         const fileId = ID.unique();
         
+        log("Uploading solutions to Appwrite...");
         await storage.createFile('solutions', fileId, InputFile.fromBuffer(buffer, `${testDoc.test_id}-solutions.json`));
         
         await databases.updateDocument(process.env.DATABASE_ID, 'mock_tests', testDoc.$id, {

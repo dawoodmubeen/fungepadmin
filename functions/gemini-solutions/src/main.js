@@ -3,13 +3,18 @@ import { InputFile } from 'node-appwrite/file';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async ({ req, res, log, error }) => {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-    
+
+    // Hardcoding endpoint and project ID to prevent any 'fetch failed' typos from Environment Variables
+    const endpoint = 'https://cloud.appwrite.io/v1';
+    const projectId = '6a11e2ba00082db8f17a';
+    const apiKey = (process.env.APPWRITE_API_KEY || '').trim();
+
     const client = new Client()
-        .setEndpoint(process.env.APPWRITE_FUNCTION_ENDPOINT || process.env.APPWRITE_ENDPOINT)
-        .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID)
-        .setKey(process.env.APPWRITE_API_KEY);
+        .setEndpoint(endpoint)
+        .setProject(projectId)
+        .setKey(apiKey);
         
     const databases = new Databases(client);
     const storage = new Storage(client);

@@ -41,10 +41,21 @@ export default async ({ req, res, log, error }) => {
         
         let mcqJson;
         try {
-            log(`Attempting to download file ID: ${testDoc.mcq_file_id} using Appwrite SDK`);
-            const arrayBuffer = await storage.getFileDownload('mock-jsons', testDoc.mcq_file_id);
-            const buffer = Buffer.from(arrayBuffer);
-            mcqJson = JSON.parse(buffer.toString('utf-8'));
+            const fileUrl = `${endpoint}/storage/buckets/mock-jsons/files/${testDoc.mcq_file_id}/download`;
+            log(`Attempting to download file from: ${fileUrl}`);
+            const fetchRes = await fetch(fileUrl, {
+                headers: {
+                    'X-Appwrite-Project': projectId,
+                    'X-Appwrite-Key': apiKey
+                }
+            });
+            
+            if (!fetchRes.ok) {
+                const errText = await fetchRes.text();
+                throw new Error(`HTTP ${fetchRes.status}: ${errText}`);
+            }
+            
+            mcqJson = await fetchRes.json();
             log("Successfully downloaded and parsed JSON file.");
         } catch (downloadErr) {
             error(`APPWRITE DOWNLOAD ERROR: ${downloadErr.message}`);
@@ -120,13 +131,45 @@ ${JSON.stringify(batch)}`;
         const fileId = ID.unique();
         
         log("Uploading solutions to Appwrite...");
-        await storage.createFile('solutions', fileId, InputFile.fromBuffer(buffer, `${testDoc.test_id}-solutions.json`));
+        const formData = new FormData();
+        formData.append('fileId', fileId);
+        formData.append('file', new Blob([buffer], { type: 'application/json' }), `${testDoc.test_id}-solutions.json`);
         
-        await databases.updateDocument(process.env.DATABASE_ID || '6a635234001c8046ec7d', 'mock_tests', testDoc.$id, {
-            status: 'ready',
-            solution_file_id: fileId,
-            updated_at: new Date().toISOString()
+        const uploadRes = await fetch(`${endpoint}/storage/buckets/solutions/files`, {
+            method: 'POST',
+            headers: {
+                'X-Appwrite-Project': projectId,
+                'X-Appwrite-Key': apiKey
+            },
+            body: formData
         });
+
+        if (!uploadRes.ok) {
+            const errText = await uploadRes.text();
+            throw new Error(`Upload failed HTTP ${uploadRes.status}: ${errText}`);
+        }
+        
+        const dbId = process.env.DATABASE_ID || '6a635234001c8046ec7d';
+        const updateRes = await fetch(`${endpoint}/databases/${dbId}/collections/mock_tests/documents/${testDoc.$id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Appwrite-Project': projectId,
+                'X-Appwrite-Key': apiKey
+            },
+            body: JSON.stringify({
+                data: {
+                    status: 'ready',
+                    solution_file_id: fileId,
+                    updated_at: new Date().toISOString()
+                }
+            })
+        });
+
+        if (!updateRes.ok) {
+            const errText = await updateRes.text();
+            throw new Error(`Update failed HTTP ${updateRes.status}: ${errText}`);
+        }
         
         log("Successfully generated solutions.");
         return res.json({ success: true, fileId });
@@ -136,14 +179,20 @@ ${JSON.stringify(batch)}`;
         if (testDoc && testDoc.$id) {
             try {
                 const dbId = process.env.DATABASE_ID || '6a635234001c8046ec7d';
-                if (!dbId) {
-                    error("DATABASE_ID is not set in environment variables");
-                } else {
-                    await databases.updateDocument(dbId, 'mock_tests', testDoc.$id, {
-                        status: 'failed',
-                        updated_at: new Date().toISOString()
-                    });
-                }
+                await fetch(`${endpoint}/databases/${dbId}/collections/mock_tests/documents/${testDoc.$id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Appwrite-Project': projectId,
+                        'X-Appwrite-Key': apiKey
+                    },
+                    body: JSON.stringify({
+                        data: {
+                            status: 'failed',
+                            updated_at: new Date().toISOString()
+                        }
+                    })
+                });
             } catch (dbErr) {
                 error("Error updating document status: " + dbErr.message);
             }

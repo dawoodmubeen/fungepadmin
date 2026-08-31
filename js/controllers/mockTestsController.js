@@ -228,15 +228,19 @@ export const mockTestsController = {
                 throw new Error("Pattern JSON missing test_id");
             }
             
-            if(testId === mcq.metadata?.test_id) {
+            const mcqTestId = mcq.test_id || mcq.metadata?.test_id;
+            if(testId === mcqTestId) {
                 validationSummary.innerHTML += '✓ Pattern test_id matches MCQ test_id<br>';
             } else {
-                throw new Error("Pattern test_id and MCQ test_id mismatch");
+                throw new Error(`Pattern test_id (${testId}) and MCQ test_id (${mcqTestId}) mismatch`);
             }
             
             const patternSections = pattern.sections || [];
             const sectionMap = {};
-            patternSections.forEach(s => sectionMap[s.id] = s);
+            patternSections.forEach(s => {
+                const sId = s.section_id || s.id;
+                sectionMap[sId] = s;
+            });
             
             const mcqQuestions = mcq.questions || [];
             const mcqSectionCounts = {};
@@ -247,9 +251,10 @@ export const mockTestsController = {
             let sectionRefsValid = true;
             
             mcqQuestions.forEach(q => {
+                const qId = q.question_id || q.id;
                 if(!sectionMap[q.section_id]) sectionRefsValid = false;
-                if(questionIds.has(q.id)) throw new Error("Duplicate question ID: " + q.id);
-                questionIds.add(q.id);
+                if(questionIds.has(qId)) throw new Error("Duplicate question ID: " + qId);
+                questionIds.add(qId);
                 
                 if(!q.options || Object.keys(q.options).length < 2) allValidOptions = false;
                 if(!q.correct_option || !q.options[q.correct_option]) correctOptionExists = false;
@@ -277,7 +282,8 @@ export const mockTestsController = {
             let sectionCountsMatch = true;
             validationSummary.innerHTML += '<br>Questions<br>';
             patternSections.forEach(s => {
-                const count = mcqSectionCounts[s.id] || 0;
+                const sId = s.section_id || s.id;
+                const count = mcqSectionCounts[sId] || 0;
                 if(count === s.total_questions) {
                     validationSummary.innerHTML += `&nbsp;&nbsp;${s.name} ${count}/${s.total_questions} ✓<br>`;
                 } else {

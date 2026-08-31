@@ -7,7 +7,7 @@ export default async ({ req, res, log, error }) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
     // Using the internal Appwrite Function Endpoint if available to bypass DNS issues, otherwise fallback to cloud
-    const endpoint = (process.env.APPWRITE_FUNCTION_ENDPOINT || 'https://cloud.appwrite.io/v1').trim();
+    const endpoint = (process.env.APPWRITE_FUNCTION_ENDPOINT || process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1').trim();
     const projectId = (process.env.APPWRITE_FUNCTION_PROJECT_ID || '6a11e2ba00082db8f17a').trim();
     const apiKey = (process.env.APPWRITE_API_KEY || '').trim();
 

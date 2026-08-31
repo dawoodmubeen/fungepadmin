@@ -250,7 +250,7 @@ export const mockTestsController = {
             if (!response.ok) throw new Error("Failed to fetch file content");
             return await response.json();
         } catch (error) {
-            throw new Error(\`Failed to fetch file \${fileId} from \${bucketId}\`);
+            throw new Error(`Failed to fetch file ${fileId} from ${bucketId}`);
         }
     },
 
@@ -296,11 +296,11 @@ export const mockTestsController = {
             // Validate Pattern JSON
             const requiredPatternFields = ['schema_version', 'pattern_id', 'university_id', 'university_name', 'test', 'sections'];
             for (const field of requiredPatternFields) {
-                if (!(field in pattern)) throw new Error(\`Pattern JSON missing \${field}\`);
+                if (!(field in pattern)) throw new Error(`Pattern JSON missing ${field}`);
             }
             const requiredTestFields = ['test_id', 'test_name', 'total_questions', 'total_marks', 'duration_minutes'];
             for (const field of requiredTestFields) {
-                if (!(field in pattern.test)) throw new Error(\`Pattern JSON test missing \${field}\`);
+                if (!(field in pattern.test)) throw new Error(`Pattern JSON test missing ${field}`);
             }
             
             const patternSections = pattern.sections || [];
@@ -316,14 +316,14 @@ export const mockTestsController = {
             // Validate MCQ JSON
             const requiredMcqFields = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'university_name', 'test_name', 'questions'];
             for (const field of requiredMcqFields) {
-                if (!(field in mcq)) throw new Error(\`MCQ JSON missing \${field}\`);
+                if (!(field in mcq)) throw new Error(`MCQ JSON missing ${field}`);
             }
             
             const testId = pattern.test.test_id;
             if (testId === mcq.test_id) {
                 validationSummary.innerHTML += '✓ Pattern test_id matches MCQ test_id<br>';
             } else {
-                throw new Error(\`Pattern test_id (\${testId}) and MCQ test_id (\${mcq.test_id}) mismatch\`);
+                throw new Error(`Pattern test_id (${testId}) and MCQ test_id (${mcq.test_id}) mismatch`);
             }
             
             const mcqQuestions = mcq.questions || [];
@@ -334,14 +334,14 @@ export const mockTestsController = {
             mcqQuestions.forEach(q => {
                 const qId = q.question_id || q.id;
                 if(!qId || !q.section_id || !q.question || !q.options || !q.correct_option) {
-                    throw new Error(\`Question missing required fields\`);
+                    throw new Error(`Question missing required fields`);
                 }
-                if(!sectionMap[q.section_id]) throw new Error(\`Invalid section reference in MCQ JSON: \${q.section_id}\`);
+                if(!sectionMap[q.section_id]) throw new Error(`Invalid section reference in MCQ JSON: ${q.section_id}`);
                 if(questionIds.has(qId)) throw new Error("Duplicate question ID: " + qId);
                 questionIds.add(qId);
                 
-                if(Object.keys(q.options).length < 2) throw new Error(\`Question \${qId} has missing or invalid options\`);
-                if(!q.options[q.correct_option]) throw new Error(\`Question \${qId} has invalid correct_option\`);
+                if(Object.keys(q.options).length < 2) throw new Error(`Question ${qId} has missing or invalid options`);
+                if(!q.options[q.correct_option]) throw new Error(`Question ${qId} has invalid correct_option`);
                 
                 mcqSectionCounts[q.section_id] = (mcqSectionCounts[q.section_id] || 0) + 1;
                 mcqAnswers[qId] = q.correct_option;
@@ -361,7 +361,7 @@ export const mockTestsController = {
                 const sId = s.section_id || s.id;
                 const count = mcqSectionCounts[sId] || 0;
                 if(count !== s.total_questions) {
-                    validationSummary.innerHTML += \`❌ \${s.name} \${count}/\${s.total_questions}<br>\`;
+                    validationSummary.innerHTML += `❌ ${s.name} ${count}/${s.total_questions}<br>`;
                     sectionCountsMatch = false;
                 }
             });
@@ -374,7 +374,7 @@ export const mockTestsController = {
             if (hasSolution) {
                 const reqSol = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'solutions'];
                 for (const field of reqSol) {
-                    if (!(field in solution)) throw new Error(\`Solution JSON missing \${field}\`);
+                    if (!(field in solution)) throw new Error(`Solution JSON missing ${field}`);
                 }
                 if (solution.test_id !== mcq.test_id) throw new Error("Solution test_id mismatch");
                 if (solution.pattern_id !== mcq.pattern_id) throw new Error("Solution pattern_id mismatch");
@@ -383,11 +383,11 @@ export const mockTestsController = {
                 const solMap = new Set();
                 solution.solutions.forEach(s => {
                     if(!s.question_id || !s.correct_option) throw new Error("Solution item missing required fields");
-                    if(!mcqAnswers[s.question_id]) throw new Error(\`Solution has unknown question ID: \${s.question_id}\`);
-                    if(solMap.has(s.question_id)) throw new Error(\`Duplicate solution question ID: \${s.question_id}\`);
+                    if(!mcqAnswers[s.question_id]) throw new Error(`Solution has unknown question ID: ${s.question_id}`);
+                    if(solMap.has(s.question_id)) throw new Error(`Duplicate solution question ID: ${s.question_id}`);
                     
                     if(s.correct_option !== mcqAnswers[s.question_id]) {
-                        throw new Error(\`Solution validation failed\\nQuestion: \${s.question_id}\\nMCQ correct option: \${mcqAnswers[s.question_id]}\\nSolution correct option: \${s.correct_option}\\nPlease correct the solution JSON.\`);
+                        throw new Error(`Solution validation failed\nQuestion: ${s.question_id}\nMCQ correct option: ${mcqAnswers[s.question_id]}\nSolution correct option: ${s.correct_option}\nPlease correct the solution JSON.`);
                     }
                     solMap.add(s.question_id);
                 });
@@ -396,7 +396,7 @@ export const mockTestsController = {
                     completeSolutions = true;
                     validationSummary.innerHTML += '✓ Solutions complete and answers match<br>';
                 } else {
-                    validationSummary.innerHTML += \`⚠ \${mcqQuestions.length - solution.solutions.length} solutions missing<br>\`;
+                    validationSummary.innerHTML += `⚠ ${mcqQuestions.length - solution.solutions.length} solutions missing<br>`;
                 }
             } else {
                 validationSummary.innerHTML += 'ℹ No solution JSON provided (Draft mode)<br>';
@@ -404,8 +404,8 @@ export const mockTestsController = {
             
             validationSummary.innerHTML += '<br><span class="text-green-600 font-bold">All validation checks passed. Uploading...</span><br>';
             
-            const patternFileName = \`\${testId}-pattern.json\`;
-            const mcqFileName = \`\${testId}.json\`;
+            const patternFileName = `${testId}-pattern.json`;
+            const mcqFileName = `${testId}.json`;
             
             const newPatternFile = new File([patternFileEl.files[0]], patternFileName, {type: "application/json"});
             const newMcqFile = new File([mcqFileEl.files[0]], mcqFileName, {type: "application/json"});
@@ -415,7 +415,7 @@ export const mockTestsController = {
             
             let solutionUploaded = null;
             if (hasSolution) {
-                const solutionFileName = \`\${testId}-solutions.json\`;
+                const solutionFileName = `${testId}-solutions.json`;
                 const newSolutionFile = new File([solutionFileEl.files[0]], solutionFileName, {type: "application/json"});
                 solutionUploaded = await storage.createFile('solutions', ID.unique(), newSolutionFile);
             }
@@ -441,13 +441,13 @@ export const mockTestsController = {
                 updated_at: now
             });
             
-            showToast(\`Test uploaded successfully and saved as \${finalStatus}\`);
+            showToast(`Test uploaded successfully and saved as ${finalStatus}`);
             document.getElementById('create-mock-modal').classList.add('hidden');
             this.loadList();
             
         } catch (error) {
             console.error(error);
-            validationSummary.innerHTML += \`<br><span class="text-red-600 font-bold">❌ Validation failed: \${error.message}</span>\`;
+            validationSummary.innerHTML += `<br><span class="text-red-600 font-bold">❌ Validation failed: ${error.message}</span>`;
         } finally {
             btn.disabled = false;
             btn.textContent = 'Validate & Upload';
@@ -482,7 +482,7 @@ export const mockTestsController = {
             
             const reqSol = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'solutions'];
             for (const field of reqSol) {
-                if (!(field in solution)) throw new Error(\`Solution JSON missing \${field}\`);
+                if (!(field in solution)) throw new Error(`Solution JSON missing ${field}`);
             }
             if (solution.test_id !== mcq.test_id) throw new Error("Solution test_id mismatch");
             
@@ -495,11 +495,11 @@ export const mockTestsController = {
             const solMap = new Set();
             solution.solutions.forEach(s => {
                 if(!s.question_id || !s.correct_option) throw new Error("Solution item missing required fields");
-                if(!mcqAnswers[s.question_id]) throw new Error(\`Solution has unknown question ID: \${s.question_id}\`);
-                if(solMap.has(s.question_id)) throw new Error(\`Duplicate solution question ID: \${s.question_id}\`);
+                if(!mcqAnswers[s.question_id]) throw new Error(`Solution has unknown question ID: ${s.question_id}`);
+                if(solMap.has(s.question_id)) throw new Error(`Duplicate solution question ID: ${s.question_id}`);
                 
                 if(s.correct_option !== mcqAnswers[s.question_id]) {
-                    throw new Error(\`Solution validation failed\\nQuestion: \${s.question_id}\\nMCQ correct option: \${mcqAnswers[s.question_id]}\\nSolution correct option: \${s.correct_option}\\nPlease correct the solution JSON.\`);
+                    throw new Error(`Solution validation failed\nQuestion: ${s.question_id}\nMCQ correct option: ${mcqAnswers[s.question_id]}\nSolution correct option: ${s.correct_option}\nPlease correct the solution JSON.`);
                 }
                 solMap.add(s.question_id);
             });
@@ -509,13 +509,13 @@ export const mockTestsController = {
                 completeSolutions = true;
                 validationSummary.innerHTML += '✓ Solutions complete and answers match<br>';
             } else {
-                validationSummary.innerHTML += \`⚠ \${mcqQuestions.length - solution.solutions.length} solutions missing<br>\`;
+                validationSummary.innerHTML += `⚠ ${mcqQuestions.length - solution.solutions.length} solutions missing<br>`;
             }
             
             validationSummary.innerHTML += '<br><span class="text-green-600 font-bold">Uploading new solution...</span><br>';
             
             const testId = mcq.test_id;
-            const solutionFileName = \`\${testId}-solutions.json\`;
+            const solutionFileName = `${testId}-solutions.json`;
             const newSolutionFile = new File([solutionFileEl.files[0]], solutionFileName, {type: "application/json"});
             
             const solutionUploaded = await storage.createFile('solutions', ID.unique(), newSolutionFile);
@@ -532,7 +532,7 @@ export const mockTestsController = {
             
         } catch (error) {
             console.error(error);
-            validationSummary.innerHTML += \`<br><span class="text-red-600 font-bold">❌ Validation failed: \${error.message}</span>\`;
+            validationSummary.innerHTML += `<br><span class="text-red-600 font-bold">❌ Validation failed: ${error.message}</span>`;
         } finally {
             btn.disabled = false;
             btn.textContent = 'Validate & Replace';

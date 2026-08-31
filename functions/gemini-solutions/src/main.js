@@ -11,6 +11,10 @@ export default async ({ req, res, log, error }) => {
     const projectId = (process.env.APPWRITE_FUNCTION_PROJECT_ID || '6a11e2ba00082db8f17a').trim();
     const apiKey = (process.env.APPWRITE_API_KEY || '').trim();
 
+    if (!apiKey) {
+        log("WARNING: APPWRITE_API_KEY environment variable is missing or empty.");
+    }
+
     const client = new Client()
         .setEndpoint(endpoint)
         .setProject(projectId)
@@ -37,21 +41,10 @@ export default async ({ req, res, log, error }) => {
         
         let mcqJson;
         try {
-            const fileUrl = `${endpoint}/storage/buckets/mock-jsons/files/${testDoc.mcq_file_id}/download`;
-            log(`Attempting to download file from: ${fileUrl}`);
-            
-            const fetchRes = await fetch(fileUrl, {
-                headers: {
-                    'X-Appwrite-Project': projectId,
-                    'X-Appwrite-Key': apiKey
-                }
-            });
-            
-            if (!fetchRes.ok) {
-                throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
-            }
-            
-            mcqJson = await fetchRes.json();
+            log(`Attempting to download file ID: ${testDoc.mcq_file_id} using Appwrite SDK`);
+            const arrayBuffer = await storage.getFileDownload('mock-jsons', testDoc.mcq_file_id);
+            const buffer = Buffer.from(arrayBuffer);
+            mcqJson = JSON.parse(buffer.toString('utf-8'));
             log("Successfully downloaded and parsed JSON file.");
         } catch (downloadErr) {
             error(`APPWRITE DOWNLOAD ERROR: ${downloadErr.message}`);
@@ -129,7 +122,7 @@ ${JSON.stringify(batch)}`;
         log("Uploading solutions to Appwrite...");
         await storage.createFile('solutions', fileId, InputFile.fromBuffer(buffer, `${testDoc.test_id}-solutions.json`));
         
-        await databases.updateDocument(process.env.DATABASE_ID, 'mock_tests', testDoc.$id, {
+        await databases.updateDocument(process.env.DATABASE_ID || '6a635234001c8046ec7d', 'mock_tests', testDoc.$id, {
             status: 'ready',
             solution_file_id: fileId,
             updated_at: new Date().toISOString()
@@ -141,10 +134,19 @@ ${JSON.stringify(batch)}`;
     } catch (e) {
         error("Error generating solutions: " + e.message);
         if (testDoc && testDoc.$id) {
-            await databases.updateDocument(process.env.DATABASE_ID, 'mock_tests', testDoc.$id, {
-                status: 'failed',
-                updated_at: new Date().toISOString()
-            });
+            try {
+                const dbId = process.env.DATABASE_ID || '6a635234001c8046ec7d';
+                if (!dbId) {
+                    error("DATABASE_ID is not set in environment variables");
+                } else {
+                    await databases.updateDocument(dbId, 'mock_tests', testDoc.$id, {
+                        status: 'failed',
+                        updated_at: new Date().toISOString()
+                    });
+                }
+            } catch (dbErr) {
+                error("Error updating document status: " + dbErr.message);
+            }
         }
         return res.json({ success: false, error: e.message });
     }

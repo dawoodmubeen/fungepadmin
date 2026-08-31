@@ -14,6 +14,8 @@ import { reviewsController } from './controllers/reviewsController.js';
 import { couponsController } from './controllers/couponsController.js';
 import { subscriptionsController } from './controllers/subscriptionsController.js';
 
+import { mockTestsController } from './controllers/mockTestsController.js';
+
 class App {
     constructor() {
         this.adminDoc = null;
@@ -27,7 +29,8 @@ class App {
             'feedback': feedbackController,
             'reviews': reviewsController,
             'coupons': couponsController,
-            'subscriptions': subscriptionsController
+            'subscriptions': subscriptionsController,
+            'mock-tests': mockTestsController
         };
     }
 

@@ -12,6 +12,10 @@ export function renderSidebar(adminDoc) {
                 
                 <div class="mt-4 pt-4 border-t border-gray-200">
                     <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Content</p>
+                    <a href="#mock-tests" class="nav-link group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary hover:bg-gray-50" data-target="mock-tests">
+                        <i data-lucide="book-open" class="text-gray-400 group-hover:text-primary mr-3 flex-shrink-0 h-5 w-5"></i>
+                        Mock Tests
+                    </a>
                     <a href="#past-papers" class="nav-link group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary hover:bg-gray-50" data-target="past-papers">
                         <i data-lucide="file-text" class="text-gray-400 group-hover:text-primary mr-3 flex-shrink-0 h-5 w-5"></i>
                         Past Papers

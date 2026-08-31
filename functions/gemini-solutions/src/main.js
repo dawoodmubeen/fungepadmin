@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async ({ req, res, log, error }) => {
     const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
 
     // Using the internal Appwrite Function Endpoint if available to bypass DNS issues, otherwise fallback to cloud
     const endpoint = (process.env.APPWRITE_FUNCTION_ENDPOINT || process.env.APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1').trim();

@@ -62,10 +62,39 @@ export const mockTestsController = {
                             <label class="block text-sm font-medium text-gray-700">MCQ JSON</label>
                             <input type="file" id="mcq-json" accept=".json" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border p-2 rounded-md">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Solution JSON (Optional)</label>
+                            <input type="file" id="solution-json" accept=".json" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border p-2 rounded-md">
+                        </div>
                         <div id="validation-summary" class="hidden bg-gray-50 p-4 rounded-md mt-4 text-sm font-mono border"></div>
                         <div class="mt-6 flex justify-end gap-3">
                             <button type="button" id="cancel-mock-btn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
                             <button type="submit" id="submit-mock-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Validate & Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Replace Solution Modal -->
+            <div id="replace-solution-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center overflow-y-auto">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-md m-4 my-8 p-6 relative">
+                    <button id="close-replace-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                    <h2 class="text-xl font-bold mb-6">Upload/Replace Solutions</h2>
+                    <form id="replace-solution-form" class="space-y-4">
+                        <input type="hidden" id="replace-test-id">
+                        <input type="hidden" id="replace-mcq-file-id">
+                        <input type="hidden" id="replace-pattern-file-id">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">New Solution JSON</label>
+                            <input type="file" id="new-solution-json" accept=".json" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border p-2 rounded-md">
+                        </div>
+                        <div id="replace-validation-summary" class="hidden bg-gray-50 p-4 rounded-md mt-4 text-sm font-mono border"></div>
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button type="button" id="cancel-replace-btn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                            <button type="submit" id="submit-replace-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Validate & Replace</button>
                         </div>
                     </form>
                 </div>
@@ -90,9 +119,21 @@ export const mockTestsController = {
             document.getElementById('create-mock-modal').classList.add('hidden');
         });
 
+        document.getElementById('close-replace-modal-btn').addEventListener('click', () => {
+            document.getElementById('replace-solution-modal').classList.add('hidden');
+        });
+        document.getElementById('cancel-replace-btn').addEventListener('click', () => {
+            document.getElementById('replace-solution-modal').classList.add('hidden');
+        });
+
         document.getElementById('create-mock-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             await this.handleCreateMock();
+        });
+
+        document.getElementById('replace-solution-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.handleReplaceSolution();
         });
     },
 
@@ -127,26 +168,37 @@ export const mockTestsController = {
             }
 
             let html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead><tr>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">University</th>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Access</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Info</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status & Access</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
             html += '</tr></thead><tbody class="divide-y divide-gray-200">';
             
             result.documents.forEach(doc => {
                 const statusColor = doc.status === 'ready' ? 'bg-green-100 text-green-800' :
                                    doc.status === 'published' ? 'bg-blue-100 text-blue-800' :
-                                   doc.status === 'generating_solutions' ? 'bg-yellow-100 text-yellow-800' :
-                                   doc.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
+                                   doc.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                   doc.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+                
+                const hasSolutions = !!doc.solution_file_id;
                 
                 html += `<tr>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${doc.title}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${doc.university_name}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">${doc.status}</span></td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${doc.is_premium ? 'Premium' : 'Free'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${doc.title}</div>
+                        <div class="text-sm text-gray-500">${doc.university_name}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <div>Pattern: ✓ Uploaded</div>
+                        <div>MCQs: ✓ Uploaded</div>
+                        <div>Solutions: ${hasSolutions ? '✓ Uploaded' : '<span class="text-yellow-600">⚠ Missing</span>'}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">${doc.status}</span>
+                        <div class="mt-1 text-gray-500 text-xs">${doc.is_premium ? 'Premium' : 'Free'}</div>
+                    </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 space-x-2">
-                        ${doc.status === 'ready' ? `<button class="text-blue-600 hover:text-blue-900 publish-btn" data-id="${doc.$id}">Publish</button>` : ''}
+                        ${(doc.status === 'ready' || doc.status === 'draft') ? `<button class="text-blue-600 hover:text-blue-900 publish-btn" data-id="${doc.$id}">Publish</button>` : ''}
+                        <button class="text-indigo-600 hover:text-indigo-900 replace-sol-btn" data-id="${doc.$id}" data-mcq="${doc.mcq_file_id}" data-pattern="${doc.pattern_file_id}">${hasSolutions ? 'Replace' : 'Upload'} Solutions</button>
                     </td>
                 </tr>`;
             });
@@ -170,10 +222,35 @@ export const mockTestsController = {
                     }
                 });
             });
+            
+            document.querySelectorAll('.replace-sol-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.getElementById('replace-solution-form').reset();
+                    document.getElementById('replace-validation-summary').classList.add('hidden');
+                    document.getElementById('replace-validation-summary').innerHTML = '';
+                    
+                    document.getElementById('replace-test-id').value = e.target.dataset.id;
+                    document.getElementById('replace-mcq-file-id').value = e.target.dataset.mcq;
+                    document.getElementById('replace-pattern-file-id').value = e.target.dataset.pattern;
+                    
+                    document.getElementById('replace-solution-modal').classList.remove('hidden');
+                });
+            });
 
         } catch (error) {
             console.error(error);
             document.getElementById('mock-tests-list').innerHTML = '<div class="text-center text-red-500 py-8">Failed to load mock tests.</div>';
+        }
+    },
+
+    async fetchFileContent(bucketId, fileId) {
+        try {
+            const url = storage.getFileDownload(bucketId, fileId);
+            const response = await fetch(url.href);
+            if (!response.ok) throw new Error("Failed to fetch file content");
+            return await response.json();
+        } catch (error) {
+            throw new Error(\`Failed to fetch file \${fileId} from \${bucketId}\`);
         }
     },
 
@@ -187,6 +264,7 @@ export const mockTestsController = {
         
         const patternFileEl = document.getElementById('pattern-json');
         const mcqFileEl = document.getElementById('mcq-json');
+        const solutionFileEl = document.getElementById('solution-json');
         
         const validationSummary = document.getElementById('validation-summary');
         const btn = document.getElementById('submit-mock-btn');
@@ -199,79 +277,78 @@ export const mockTestsController = {
         try {
             const patternContent = await this.readFile(patternFileEl.files[0]);
             const mcqContent = await this.readFile(mcqFileEl.files[0]);
+            const hasSolution = solutionFileEl.files.length > 0;
+            let solutionContent = null;
+            if (hasSolution) {
+                solutionContent = await this.readFile(solutionFileEl.files[0]);
+            }
             
-            let pattern, mcq;
+            let pattern, mcq, solution;
             try {
                 pattern = JSON.parse(patternContent);
                 mcq = JSON.parse(mcqContent);
-                validationSummary.innerHTML += '✓ Valid JSON<br>';
+                if (hasSolution) solution = JSON.parse(solutionContent);
+                validationSummary.innerHTML += '✓ Valid JSON format<br>';
             } catch (e) {
                 throw new Error("Invalid JSON files provided.");
             }
             
-            if(pattern.schema_version && mcq.schema_version) {
-                validationSummary.innerHTML += '✓ schema_version<br>';
-            } else {
-                throw new Error("Missing schema_version");
+            // Validate Pattern JSON
+            const requiredPatternFields = ['schema_version', 'pattern_id', 'university_id', 'university_name', 'test', 'sections'];
+            for (const field of requiredPatternFields) {
+                if (!(field in pattern)) throw new Error(\`Pattern JSON missing \${field}\`);
             }
-            
-            if(uniId) {
-                validationSummary.innerHTML += '✓ University exists<br>';
-            } else {
-                throw new Error("University not selected");
-            }
-            
-            const testId = pattern.test?.test_id;
-            if(testId) {
-                validationSummary.innerHTML += '✓ Test ID exists<br>';
-            } else {
-                throw new Error("Pattern JSON missing test_id");
-            }
-            
-            const mcqTestId = mcq.test_id || mcq.metadata?.test_id;
-            if(testId === mcqTestId) {
-                validationSummary.innerHTML += '✓ Pattern test_id matches MCQ test_id<br>';
-            } else {
-                throw new Error(`Pattern test_id (${testId}) and MCQ test_id (${mcqTestId}) mismatch`);
+            const requiredTestFields = ['test_id', 'test_name', 'total_questions', 'total_marks', 'duration_minutes'];
+            for (const field of requiredTestFields) {
+                if (!(field in pattern.test)) throw new Error(\`Pattern JSON test missing \${field}\`);
             }
             
             const patternSections = pattern.sections || [];
             const sectionMap = {};
             patternSections.forEach(s => {
                 const sId = s.section_id || s.id;
+                if(!sId || !s.name || s.total_questions === undefined || s.weightage_percent === undefined || s.negative_marking === undefined) {
+                    throw new Error("Pattern JSON sections missing required fields");
+                }
                 sectionMap[sId] = s;
             });
+            
+            // Validate MCQ JSON
+            const requiredMcqFields = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'university_name', 'test_name', 'questions'];
+            for (const field of requiredMcqFields) {
+                if (!(field in mcq)) throw new Error(\`MCQ JSON missing \${field}\`);
+            }
+            
+            const testId = pattern.test.test_id;
+            if (testId === mcq.test_id) {
+                validationSummary.innerHTML += '✓ Pattern test_id matches MCQ test_id<br>';
+            } else {
+                throw new Error(\`Pattern test_id (\${testId}) and MCQ test_id (\${mcq.test_id}) mismatch\`);
+            }
             
             const mcqQuestions = mcq.questions || [];
             const mcqSectionCounts = {};
             const questionIds = new Set();
-            
-            let allValidOptions = true;
-            let correctOptionExists = true;
-            let sectionRefsValid = true;
+            const mcqAnswers = {};
             
             mcqQuestions.forEach(q => {
                 const qId = q.question_id || q.id;
-                if(!sectionMap[q.section_id]) sectionRefsValid = false;
+                if(!qId || !q.section_id || !q.question || !q.options || !q.correct_option) {
+                    throw new Error(\`Question missing required fields\`);
+                }
+                if(!sectionMap[q.section_id]) throw new Error(\`Invalid section reference in MCQ JSON: \${q.section_id}\`);
                 if(questionIds.has(qId)) throw new Error("Duplicate question ID: " + qId);
                 questionIds.add(qId);
                 
-                if(!q.options || Object.keys(q.options).length < 2) allValidOptions = false;
-                if(!q.correct_option || !q.options[q.correct_option]) correctOptionExists = false;
+                if(Object.keys(q.options).length < 2) throw new Error(\`Question \${qId} has missing or invalid options\`);
+                if(!q.options[q.correct_option]) throw new Error(\`Question \${qId} has invalid correct_option\`);
                 
                 mcqSectionCounts[q.section_id] = (mcqSectionCounts[q.section_id] || 0) + 1;
+                mcqAnswers[qId] = q.correct_option;
             });
             
-            if(sectionRefsValid) validationSummary.innerHTML += '✓ Section references valid<br>';
-            else throw new Error("Invalid section references in MCQ JSON");
-            
-            validationSummary.innerHTML += '✓ Question IDs unique<br>';
-            
-            if(allValidOptions) validationSummary.innerHTML += '✓ Every question has valid options<br>';
-            else throw new Error("Some questions have missing or invalid options");
-            
-            if(correctOptionExists) validationSummary.innerHTML += '✓ Correct option exists<br>';
-            else throw new Error("Some questions have invalid correct_option");
+            validationSummary.innerHTML += '✓ Section references valid<br>';
+            validationSummary.innerHTML += '✓ Question IDs unique and options valid<br>';
             
             if(pattern.test.total_questions === mcqQuestions.length) {
                 validationSummary.innerHTML += '✓ Total question count matches pattern<br>';
@@ -280,14 +357,11 @@ export const mockTestsController = {
             }
             
             let sectionCountsMatch = true;
-            validationSummary.innerHTML += '<br>Questions<br>';
             patternSections.forEach(s => {
                 const sId = s.section_id || s.id;
                 const count = mcqSectionCounts[sId] || 0;
-                if(count === s.total_questions) {
-                    validationSummary.innerHTML += `&nbsp;&nbsp;${s.name} ${count}/${s.total_questions} ✓<br>`;
-                } else {
-                    validationSummary.innerHTML += `&nbsp;&nbsp;${s.name} ${count}/${s.total_questions} ❌<br>`;
+                if(count !== s.total_questions) {
+                    validationSummary.innerHTML += \`❌ \${s.name} \${count}/\${s.total_questions}<br>\`;
                     sectionCountsMatch = false;
                 }
             });
@@ -295,13 +369,62 @@ export const mockTestsController = {
             if(sectionCountsMatch) validationSummary.innerHTML += '✓ Per-section question count matches<br>';
             else throw new Error("Per-section question count mismatch");
             
+            // Validate Solution JSON
+            let completeSolutions = false;
+            if (hasSolution) {
+                const reqSol = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'solutions'];
+                for (const field of reqSol) {
+                    if (!(field in solution)) throw new Error(\`Solution JSON missing \${field}\`);
+                }
+                if (solution.test_id !== mcq.test_id) throw new Error("Solution test_id mismatch");
+                if (solution.pattern_id !== mcq.pattern_id) throw new Error("Solution pattern_id mismatch");
+                if (solution.university_id !== mcq.university_id) throw new Error("Solution university_id mismatch");
+                
+                const solMap = new Set();
+                solution.solutions.forEach(s => {
+                    if(!s.question_id || !s.correct_option) throw new Error("Solution item missing required fields");
+                    if(!mcqAnswers[s.question_id]) throw new Error(\`Solution has unknown question ID: \${s.question_id}\`);
+                    if(solMap.has(s.question_id)) throw new Error(\`Duplicate solution question ID: \${s.question_id}\`);
+                    
+                    if(s.correct_option !== mcqAnswers[s.question_id]) {
+                        throw new Error(\`Solution validation failed\\nQuestion: \${s.question_id}\\nMCQ correct option: \${mcqAnswers[s.question_id]}\\nSolution correct option: \${s.correct_option}\\nPlease correct the solution JSON.\`);
+                    }
+                    solMap.add(s.question_id);
+                });
+                
+                if (solution.solutions.length === mcqQuestions.length) {
+                    completeSolutions = true;
+                    validationSummary.innerHTML += '✓ Solutions complete and answers match<br>';
+                } else {
+                    validationSummary.innerHTML += \`⚠ \${mcqQuestions.length - solution.solutions.length} solutions missing<br>\`;
+                }
+            } else {
+                validationSummary.innerHTML += 'ℹ No solution JSON provided (Draft mode)<br>';
+            }
+            
             validationSummary.innerHTML += '<br><span class="text-green-600 font-bold">All validation checks passed. Uploading...</span><br>';
             
-            const patternUploaded = await storage.createFile('test_patterns', ID.unique(), patternFileEl.files[0]);
-            const mcqUploaded = await storage.createFile('mock-jsons', ID.unique(), mcqFileEl.files[0]);
+            const patternFileName = \`\${testId}-pattern.json\`;
+            const mcqFileName = \`\${testId}.json\`;
+            
+            const newPatternFile = new File([patternFileEl.files[0]], patternFileName, {type: "application/json"});
+            const newMcqFile = new File([mcqFileEl.files[0]], mcqFileName, {type: "application/json"});
+            
+            const patternUploaded = await storage.createFile('test_patterns', ID.unique(), newPatternFile);
+            const mcqUploaded = await storage.createFile('mock-jsons', ID.unique(), newMcqFile);
+            
+            let solutionUploaded = null;
+            if (hasSolution) {
+                const solutionFileName = \`\${testId}-solutions.json\`;
+                const newSolutionFile = new File([solutionFileEl.files[0]], solutionFileName, {type: "application/json"});
+                solutionUploaded = await storage.createFile('solutions', ID.unique(), newSolutionFile);
+            }
             
             const docId = ID.unique();
             const now = new Date().toISOString();
+            
+            const finalStatus = (hasSolution && completeSolutions) ? 'ready' : 'draft';
+            
             await databases.createDocument(CONFIG.databaseId, 'mock_tests', docId, {
                 test_id: testId,
                 university_id: uniId,
@@ -311,22 +434,108 @@ export const mockTestsController = {
                 test_type: testType,
                 pattern_file_id: patternUploaded.$id,
                 mcq_file_id: mcqUploaded.$id,
+                solution_file_id: solutionUploaded ? solutionUploaded.$id : null,
                 is_premium: isPremium,
-                status: 'generating_solutions',
+                status: finalStatus,
                 created_at: now,
                 updated_at: now
             });
             
-            showToast("Test uploaded and queued for solution generation!");
+            showToast(\`Test uploaded successfully and saved as \${finalStatus}\`);
             document.getElementById('create-mock-modal').classList.add('hidden');
             this.loadList();
             
         } catch (error) {
             console.error(error);
-            validationSummary.innerHTML += `<br><span class="text-red-600 font-bold">❌ Validation failed: ${error.message}</span>`;
+            validationSummary.innerHTML += \`<br><span class="text-red-600 font-bold">❌ Validation failed: \${error.message}</span>\`;
         } finally {
             btn.disabled = false;
             btn.textContent = 'Validate & Upload';
+        }
+    },
+
+    async handleReplaceSolution() {
+        const docId = document.getElementById('replace-test-id').value;
+        const mcqFileId = document.getElementById('replace-mcq-file-id').value;
+        const solutionFileEl = document.getElementById('new-solution-json');
+        
+        const validationSummary = document.getElementById('replace-validation-summary');
+        const btn = document.getElementById('submit-replace-btn');
+        
+        btn.disabled = true;
+        btn.textContent = 'Validating...';
+        validationSummary.classList.remove('hidden');
+        validationSummary.innerHTML = 'Fetching existing MCQ JSON...<br>';
+        
+        try {
+            // Fetch MCQ JSON for validation
+            const mcq = await this.fetchFileContent('mock-jsons', mcqFileId);
+            validationSummary.innerHTML += '✓ Fetched existing MCQ JSON<br>';
+            
+            const solutionContent = await this.readFile(solutionFileEl.files[0]);
+            let solution;
+            try {
+                solution = JSON.parse(solutionContent);
+            } catch(e) {
+                throw new Error("Invalid Solution JSON file.");
+            }
+            
+            const reqSol = ['schema_version', 'test_id', 'pattern_id', 'university_id', 'solutions'];
+            for (const field of reqSol) {
+                if (!(field in solution)) throw new Error(\`Solution JSON missing \${field}\`);
+            }
+            if (solution.test_id !== mcq.test_id) throw new Error("Solution test_id mismatch");
+            
+            const mcqAnswers = {};
+            const mcqQuestions = mcq.questions || [];
+            mcqQuestions.forEach(q => {
+                mcqAnswers[q.question_id || q.id] = q.correct_option;
+            });
+            
+            const solMap = new Set();
+            solution.solutions.forEach(s => {
+                if(!s.question_id || !s.correct_option) throw new Error("Solution item missing required fields");
+                if(!mcqAnswers[s.question_id]) throw new Error(\`Solution has unknown question ID: \${s.question_id}\`);
+                if(solMap.has(s.question_id)) throw new Error(\`Duplicate solution question ID: \${s.question_id}\`);
+                
+                if(s.correct_option !== mcqAnswers[s.question_id]) {
+                    throw new Error(\`Solution validation failed\\nQuestion: \${s.question_id}\\nMCQ correct option: \${mcqAnswers[s.question_id]}\\nSolution correct option: \${s.correct_option}\\nPlease correct the solution JSON.\`);
+                }
+                solMap.add(s.question_id);
+            });
+            
+            let completeSolutions = false;
+            if (solution.solutions.length === mcqQuestions.length) {
+                completeSolutions = true;
+                validationSummary.innerHTML += '✓ Solutions complete and answers match<br>';
+            } else {
+                validationSummary.innerHTML += \`⚠ \${mcqQuestions.length - solution.solutions.length} solutions missing<br>\`;
+            }
+            
+            validationSummary.innerHTML += '<br><span class="text-green-600 font-bold">Uploading new solution...</span><br>';
+            
+            const testId = mcq.test_id;
+            const solutionFileName = \`\${testId}-solutions.json\`;
+            const newSolutionFile = new File([solutionFileEl.files[0]], solutionFileName, {type: "application/json"});
+            
+            const solutionUploaded = await storage.createFile('solutions', ID.unique(), newSolutionFile);
+            
+            await databases.updateDocument(CONFIG.databaseId, 'mock_tests', docId, {
+                solution_file_id: solutionUploaded.$id,
+                status: completeSolutions ? 'ready' : 'draft',
+                updated_at: new Date().toISOString()
+            });
+            
+            showToast("Solutions updated successfully");
+            document.getElementById('replace-solution-modal').classList.add('hidden');
+            this.loadList();
+            
+        } catch (error) {
+            console.error(error);
+            validationSummary.innerHTML += \`<br><span class="text-red-600 font-bold">❌ Validation failed: \${error.message}</span>\`;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Validate & Replace';
         }
     },
     

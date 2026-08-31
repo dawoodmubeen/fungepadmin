@@ -6,9 +6,9 @@ export default async ({ req, res, log, error }) => {
     const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-    // Hardcoding endpoint and project ID to prevent any 'fetch failed' typos from Environment Variables
-    const endpoint = 'https://cloud.appwrite.io/v1';
-    const projectId = '6a11e2ba00082db8f17a';
+    // Using the internal Appwrite Function Endpoint if available to bypass DNS issues, otherwise fallback to cloud
+    const endpoint = (process.env.APPWRITE_FUNCTION_ENDPOINT || 'https://cloud.appwrite.io/v1').trim();
+    const projectId = (process.env.APPWRITE_FUNCTION_PROJECT_ID || '6a11e2ba00082db8f17a').trim();
     const apiKey = (process.env.APPWRITE_API_KEY || '').trim();
 
     const client = new Client()
@@ -35,17 +35,28 @@ export default async ({ req, res, log, error }) => {
     try {
         log(`Generating solutions for test: ${testDoc.$id}`);
         
-        let mcqFileBuffer;
+        let mcqJson;
         try {
-            log(`Attempting to download file ${testDoc.mcq_file_id} from Appwrite...`);
-            mcqFileBuffer = await storage.getFileDownload('mock-jsons', testDoc.mcq_file_id);
-            log("Successfully downloaded file from Appwrite.");
+            const fileUrl = `${endpoint}/storage/buckets/mock-jsons/files/${testDoc.mcq_file_id}/download`;
+            log(`Attempting to download file from: ${fileUrl}`);
+            
+            const fetchRes = await fetch(fileUrl, {
+                headers: {
+                    'X-Appwrite-Project': projectId,
+                    'X-Appwrite-Key': apiKey
+                }
+            });
+            
+            if (!fetchRes.ok) {
+                throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
+            }
+            
+            mcqJson = await fetchRes.json();
+            log("Successfully downloaded and parsed JSON file.");
         } catch (downloadErr) {
             error(`APPWRITE DOWNLOAD ERROR: ${downloadErr.message}`);
             throw downloadErr;
         }
-        
-        const mcqJson = JSON.parse(mcqFileBuffer.toString('utf8'));
         
         const questions = mcqJson.questions || [];
         const solutions = [];

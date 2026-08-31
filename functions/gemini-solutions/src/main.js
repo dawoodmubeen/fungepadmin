@@ -1,4 +1,4 @@
-```javascript
+
 import { Client, Databases, Storage, ID } from "node-appwrite";
 import { GoogleGenAI } from "@google/genai";
 
@@ -695,4 +695,4 @@ ${JSON.stringify(batch, null, 2)}
         });
     }
 };
-```
+

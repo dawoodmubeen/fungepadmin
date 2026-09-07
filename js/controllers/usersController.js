@@ -95,11 +95,19 @@ export const usersController = {
         const filterStatus = document.getElementById('filter-status');
 
         searchInput?.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
+            const q = e.target.value.toLowerCase().trim();
+            if (!q) {
+                this.renderTableRows(this.users);
+                return;
+            }
             const filtered = this.users.filter(u => 
                 (u.full_name && u.full_name.toLowerCase().includes(q)) || 
                 (u.email && u.email.toLowerCase().includes(q)) ||
-                (u.university_target && u.university_target.toLowerCase().includes(q))
+                (u.university_target && u.university_target.toLowerCase().includes(q)) ||
+                (u.targeted_university && u.targeted_university.toLowerCase().includes(q)) ||
+                (u.target_university && u.target_university.toLowerCase().includes(q)) ||
+                (u.field_of_study && u.field_of_study.toLowerCase().includes(q)) ||
+                (u.$id && u.$id.toLowerCase().includes(q))
             );
             this.renderTableRows(filtered);
         });
@@ -130,6 +138,11 @@ export const usersController = {
     },
 
     async loadPage(page) {
+        const tbody = document.getElementById('users-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading students...</td></tr>`;
+        }
+
         try {
             const queries = [
                 Query.orderDesc('$createdAt'),
@@ -149,18 +162,54 @@ export const usersController = {
                 queries.push(Query.notEqual('account_status', 'active'));
             }
             
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, queries);
-            this.users = res.documents;
-            
+            let res;
+            try {
+                res = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, queries);
+            } catch (err) {
+                console.warn("Complex query failed on users, executing resilient fallback:", err);
+                // Resilient fallback: query collection directly without attribute index requirements
+                const fallbackRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [
+                    Query.limit(100)
+                ]);
+                let docs = fallbackRes.documents || [];
+                
+                if (this.premiumFilter === 'premium') {
+                    docs = docs.filter(u => u.is_premium === true);
+                } else if (this.premiumFilter === 'free') {
+                    docs = docs.filter(u => !u.is_premium);
+                }
+
+                if (this.statusFilter === 'active') {
+                    docs = docs.filter(u => (u.account_status || 'active') === 'active');
+                } else if (this.statusFilter === 'banned') {
+                    docs = docs.filter(u => (u.account_status || 'active') !== 'active');
+                }
+
+                res = {
+                    total: docs.length,
+                    documents: docs.slice((page - 1) * this.limit, page * this.limit)
+                };
+            }
+
+            this.users = res.documents || [];
             this.renderTableRows(this.users);
             
-            document.getElementById('page-info').textContent = `Page ${page} (Showing ${res.documents.length} of ${res.total || res.documents.length})`;
-            document.getElementById('prev-page').disabled = page === 1;
-            document.getElementById('next-page').disabled = res.documents.length < this.limit;
+            const totalCount = res.total ?? this.users.length;
+            const pageInfo = document.getElementById('page-info');
+            if (pageInfo) {
+                pageInfo.textContent = `Page ${page} (Showing ${this.users.length} of ${totalCount})`;
+            }
+            const prevBtn = document.getElementById('prev-page');
+            if (prevBtn) prevBtn.disabled = page <= 1;
+            const nextBtn = document.getElementById('next-page');
+            if (nextBtn) nextBtn.disabled = this.users.length < this.limit;
             
         } catch (error) {
-            console.error(error);
-            showToast("Failed to load students", "error");
+            console.error("Failed to load students:", error);
+            showToast("Failed to load students: " + (error.message || error), "error");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading students: ${error.message || 'Please refresh'}.</td></tr>`;
+            }
         }
     },
 
@@ -174,11 +223,15 @@ export const usersController = {
         }
 
         tbody.innerHTML = data.map(user => {
+            const displayName = user.full_name || (user.email ? user.email.split('@')[0] : 'Student');
             const avatarUrl = user.profile_photo 
                 ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.profileImagesBucket}/files/${user.profile_photo}/view?project=${CONFIG.projectId}`
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Student')}&background=0284c7&color=fff&bold=true`;
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=00adef&color=fff&bold=true`;
 
             const isBanned = (user.account_status || 'active') === 'banned' || (user.account_status || 'active') === 'suspended';
+            const targetUni = user.university_target || user.targeted_university || user.target_university || 'Not Specified';
+            const targetField = user.field_of_study || user.targeted_test || user.target_test || 'Entrance';
+            const regDate = user.created_at || user.$createdAt ? new Date(user.created_at || user.$createdAt).toLocaleDateString() : '—';
 
             return `
                 <tr class="table-row">
@@ -187,8 +240,8 @@ export const usersController = {
                         <div class="flex items-center gap-3">
                             <img class="h-9 w-9 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0" src="${avatarUrl}" alt="Avatar">
                             <div class="min-w-0">
-                                <p class="font-bold text-slate-900 text-sm truncate">${user.full_name || 'Anonymous Student'}</p>
-                                <p class="text-xs text-slate-400 truncate">${user.email}</p>
+                                <p class="font-bold text-slate-900 text-sm truncate">${displayName}</p>
+                                <p class="text-xs text-slate-400 truncate">${user.email || 'No email'}</p>
                             </div>
                         </div>
                     </td>
@@ -210,7 +263,7 @@ export const usersController = {
                         <button class="btn-toggle-premium inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition ${user.is_premium ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}"
                             data-id="${user.$id}"
                             data-premium="${user.is_premium}"
-                            data-name="${user.full_name || user.email}"
+                            data-name="${displayName}"
                             title="Click to toggle student premium state">
                             <span>${user.is_premium ? '👑 Premium' : 'Free Access'}</span>
                             <i data-lucide="refresh-cw" class="w-3 h-3 opacity-60"></i>
@@ -219,13 +272,13 @@ export const usersController = {
 
                     <!-- Target Academic -->
                     <td class="table-cell text-xs text-slate-600">
-                        <p class="font-semibold text-slate-800">${user.university_target || user.targeted_university || 'Not Specified'}</p>
-                        <p class="text-slate-400 text-[11px]">${user.field_of_study || user.targeted_test || 'Entrance'}</p>
+                        <p class="font-semibold text-slate-800">${targetUni}</p>
+                        <p class="text-slate-400 text-[11px]">${targetField}</p>
                     </td>
 
                     <!-- Registered Date -->
                     <td class="table-cell text-xs text-slate-500 font-mono">
-                        ${new Date(user.created_at || user.$createdAt).toLocaleDateString()}
+                        ${regDate}
                     </td>
 
                     <!-- Actions -->

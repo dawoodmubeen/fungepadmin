@@ -4,110 +4,206 @@ import { showToast } from '../components/toast.js';
 
 export const pastPapersController = {
     async render(container, args) {
-        if (args.length > 0 && args[0] === 'new') {
-            this.renderForm(container, null);
-        } else if (args.length > 0 && args[0] === 'edit' && args[1]) {
-            this.renderForm(container, args[1]);
+        if (args && args.length > 0 && args[0] === 'new') {
+            await this.renderForm(container, null);
+        } else if (args && args.length > 0 && args[0] === 'edit' && args[1]) {
+            await this.renderForm(container, args[1]);
         } else {
-            this.renderList(container);
+            await this.renderList(container);
         }
     },
 
     async renderList(container) {
         container.innerHTML = `
-            <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Past Papers</h2>
-                    <p class="text-sm text-gray-500">Manage past paper PDFs.</p>
+            <div class="space-y-6">
+                <!-- Action Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Past Papers & Digital Drive</h1>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">PDF & Drive Vault</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">Upload verified previous entrance exam PDFs and configure global Google Drive access links.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button id="configure-drive-btn" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition flex items-center gap-2">
+                            <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                            <span>Drive Links</span>
+                        </button>
+                        <a href="#past-papers/new" class="btn-primary">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Upload Past Paper</span>
+                        </a>
+                    </div>
                 </div>
-                <a href="#past-papers/new" class="btn-primary inline-flex items-center">
-                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i> Upload Paper
-                </a>
+
+                <!-- Filters -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="relative flex-1 w-full md:max-w-md">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-paper" placeholder="Search by paper title, university, or subject..." class="form-input pl-10 text-xs sm:text-sm">
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <select id="filter-paper-access" class="form-input text-xs sm:text-sm py-2">
+                            <option value="all">All Access</option>
+                            <option value="premium">Premium Locked Only</option>
+                            <option value="free">Free Access Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Papers Table -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div class="table-responsive-wrapper">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <thead class="table-header">
+                                <tr>
+                                    <th>Paper Title</th>
+                                    <th>University & Test</th>
+                                    <th>Year & Subject</th>
+                                    <th>Access Lock</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="papers-tbody" class="divide-y divide-slate-100 bg-white">
+                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading papers...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <button id="prev-paper-page" class="btn-secondary text-xs" disabled>Previous</button>
+                        <span id="paper-page-info" class="text-xs font-bold text-slate-600">Page 1</span>
+                        <button id="next-paper-page" class="btn-secondary text-xs">Next</button>
+                    </div>
+                </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-4 border-b border-gray-200 bg-gray-50 flex gap-4">
-                    <div class="relative flex-1 max-w-md">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-                        <input type="text" id="search-paper" placeholder="Search by title, subject..." class="form-input pl-9">
-                    </div>
-                </div>
-                
-                <div class="table-container">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 table-header">
-                            <tr>
-                                <th>Title</th>
-                                <th>University / Test</th>
-                                <th>Year & Subject</th>
-                                <th>Access</th>
-                                <th>Status</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="papers-tbody" class="bg-white divide-y divide-gray-200">
-                            <tr><td colspan="6" class="text-center py-8 text-gray-500">Loading past papers...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                    <button id="prev-page" class="btn-secondary" disabled>Previous</button>
-                    <span id="page-info" class="text-sm text-gray-600">Page 1</span>
-                    <button id="next-page" class="btn-secondary">Next</button>
-                </div>
-            </div>
-            
-            <div id="pdf-preview-modal" class="fixed inset-0 z-[100] flex items-center justify-center modal-overlay">
-                <div class="absolute inset-0 bg-gray-900 bg-opacity-75"></div>
-                <div class="bg-white rounded-xl shadow-2xl overflow-hidden z-10 w-full max-w-5xl h-[90vh] flex flex-col modal-content">
-                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                        <h3 id="pdf-modal-title" class="text-lg font-bold text-gray-900">PDF Preview</h3>
-                        <button id="close-pdf-modal" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                            <i data-lucide="x" class="w-6 h-6"></i>
+            <!-- PDF Viewer Modal -->
+            <div id="pdf-preview-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm hidden modal-overlay">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col modal-content overflow-hidden border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h3 id="pdf-modal-title" class="text-sm font-bold text-slate-900">PDF Document Inspection</h3>
+                        <button id="close-pdf-modal" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
                         </button>
                     </div>
-                    <div class="flex-1 p-0 relative" id="pdf-container">
+                    <div class="flex-1 p-0 relative bg-slate-100">
                         <iframe id="pdf-iframe" class="w-full h-full border-0" src=""></iframe>
                     </div>
                 </div>
             </div>
+
+            <!-- Drive Links Configurator Modal -->
+            <div id="drive-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden modal-overlay">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content overflow-hidden border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="hard-drive" class="w-5 h-5 text-sky-600"></i>
+                            <h3 class="text-base font-bold text-slate-900">Digital Drive Link Configurator</h3>
+                        </div>
+                        <button id="close-drive-modal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <form id="drive-config-form" class="p-6 space-y-4">
+                        <p class="text-xs text-slate-500">Update global Google Drive cloud repository URLs accessed by student dashboards.</p>
+                        <div>
+                            <label class="form-label">Free Tier Google Drive Folder Link</label>
+                            <input type="url" id="drive-free-url" placeholder="https://drive.google.com/drive/folders/..." class="form-input text-xs">
+                        </div>
+                        <div>
+                            <label class="form-label">Premium Master Google Drive Folder Link</label>
+                            <input type="url" id="drive-premium-url" placeholder="https://drive.google.com/drive/folders/..." class="form-input text-xs">
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                            <button type="button" id="cancel-drive-btn" class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Drive Links</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
+
         if (window.lucide) window.lucide.createIcons();
 
         this.currentPage = 1;
-        this.papers = [];
         this.limit = 20;
-        
-        await this.loadPage(1);
+        this.papers = [];
+        this.accessFilter = 'all';
 
-        document.getElementById('search-paper').addEventListener('input', (e) => {
+        await this.loadPage(1);
+        this.setupEvents();
+    },
+
+    setupEvents() {
+        const searchInput = document.getElementById('search-paper');
+        const filterAccess = document.getElementById('filter-paper-access');
+
+        searchInput?.addEventListener('input', (e) => {
             const q = e.target.value.toLowerCase();
             const filtered = this.papers.filter(p => 
                 (p.title && p.title.toLowerCase().includes(q)) || 
-                (p.subject && p.subject.toLowerCase().includes(q)) ||
-                (p.university_name && p.university_name.toLowerCase().includes(q))
+                (p.university_name && p.university_name.toLowerCase().includes(q)) ||
+                (p.subject && p.subject.toLowerCase().includes(q))
             );
-            this.renderTableRows(document.getElementById('papers-tbody'), filtered);
+            this.renderTableRows(filtered);
         });
-        
-        document.getElementById('prev-page').addEventListener('click', () => {
+
+        filterAccess?.addEventListener('change', (e) => {
+            this.accessFilter = e.target.value;
+            this.currentPage = 1;
+            this.loadPage(1);
+        });
+
+        document.getElementById('prev-paper-page')?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
                 this.loadPage(this.currentPage);
             }
         });
-        
-        document.getElementById('next-page').addEventListener('click', () => {
+
+        document.getElementById('next-paper-page')?.addEventListener('click', () => {
             this.currentPage++;
             this.loadPage(this.currentPage);
         });
 
-        // Modal Close
-        const modal = document.getElementById('pdf-preview-modal');
-        document.getElementById('close-pdf-modal').addEventListener('click', () => {
-            modal.classList.remove('modal-active');
-            document.getElementById('pdf-iframe').src = '';
+        // PDF Modal
+        const pdfModal = document.getElementById('pdf-preview-modal');
+        document.getElementById('close-pdf-modal')?.addEventListener('click', () => {
+            pdfModal.classList.remove('modal-active');
+            setTimeout(() => {
+                pdfModal.classList.add('hidden');
+                document.getElementById('pdf-iframe').src = '';
+            }, 200);
+        });
+
+        // Drive Modal
+        const driveModal = document.getElementById('drive-modal');
+        document.getElementById('configure-drive-btn')?.addEventListener('click', () => {
+            // Populate from localStorage or appwrite config
+            document.getElementById('drive-free-url').value = localStorage.getItem('fungep_free_drive') || '';
+            document.getElementById('drive-premium-url').value = localStorage.getItem('fungep_premium_drive') || '';
+            driveModal.classList.remove('hidden');
+            setTimeout(() => driveModal.classList.add('modal-active'), 10);
+        });
+
+        const closeDrive = () => {
+            driveModal.classList.remove('modal-active');
+            setTimeout(() => driveModal.classList.add('hidden'), 200);
+        };
+        document.getElementById('close-drive-modal')?.addEventListener('click', closeDrive);
+        document.getElementById('cancel-drive-btn')?.addEventListener('click', closeDrive);
+
+        document.getElementById('drive-config-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const free = document.getElementById('drive-free-url').value.trim();
+            const prem = document.getElementById('drive-premium-url').value.trim();
+            localStorage.setItem('fungep_free_drive', free);
+            localStorage.setItem('fungep_premium_drive', prem);
+            showToast("Global Drive links saved!", "success");
+            closeDrive();
         });
     },
 
@@ -118,83 +214,108 @@ export const pastPapersController = {
                 Query.limit(this.limit),
                 Query.offset((page - 1) * this.limit)
             ];
-            
+
+            if (this.accessFilter === 'premium') queries.push(Query.equal('is_premium', true));
+            if (this.accessFilter === 'free') queries.push(Query.equal('is_premium', false));
+
             const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.pastPapersCol, queries);
             this.papers = res.documents;
-            
-            const tbody = document.getElementById('papers-tbody');
-            if (this.papers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">No past papers found.</td></tr>`;
-            } else {
-                this.renderTableRows(tbody, this.papers);
-            }
-            
-            document.getElementById('page-info').textContent = `Page ${page}`;
-            document.getElementById('prev-page').disabled = page === 1;
-            document.getElementById('next-page').disabled = this.papers.length < this.limit;
-            
+            this.renderTableRows(this.papers);
+
+            document.getElementById('paper-page-info').textContent = `Page ${page}`;
+            document.getElementById('prev-paper-page').disabled = page === 1;
+            document.getElementById('next-paper-page').disabled = res.documents.length < this.limit;
+
         } catch (error) {
             console.error(error);
             showToast("Failed to load past papers", "error");
         }
     },
 
-    renderTableRows(tbody, data) {
-        tbody.innerHTML = data.map(doc => `
+    renderTableRows(data) {
+        const tbody = document.getElementById('papers-tbody');
+        if (!tbody) return;
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No past papers found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(paper => `
             <tr class="table-row">
                 <td class="table-cell">
-                    <p class="font-medium text-gray-900">${doc.title}</p>
+                    <p class="font-bold text-slate-900 text-sm">${paper.title}</p>
+                    <span class="text-[10px] text-slate-400 font-mono">ID: ${paper.$id}</span>
+                </td>
+                <td class="table-cell text-xs">
+                    <p class="font-semibold text-slate-800">${paper.university_name || 'Generic'}</p>
+                    <p class="text-slate-400">${paper.test_name || ''}</p>
+                </td>
+                <td class="table-cell text-xs text-slate-600">
+                    <span class="font-bold text-slate-800">${paper.year}</span> • ${paper.subject || 'All Subjects'}
                 </td>
                 <td class="table-cell">
-                    <p class="text-sm text-gray-900">${doc.university_name}</p>
-                    <p class="text-xs text-gray-500">${doc.test_name}</p>
-                </td>
-                <td class="table-cell text-gray-500">
-                    ${doc.year} • ${doc.subject}
-                </td>
-                <td class="table-cell">
-                    <span class="badge ${doc.is_premium ? 'badge-warning' : 'badge-success'}">
-                        ${doc.is_premium ? 'Premium' : 'Free'}
+                    <span class="badge ${paper.is_premium ? 'badge-warning' : 'badge-success'} text-xs">
+                        ${paper.is_premium ? '👑 Premium' : 'Free Access'}
                     </span>
                 </td>
                 <td class="table-cell">
-                    <span class="badge ${doc.status === 'published' ? 'badge-success' : 'badge-gray'} capitalize">
-                        ${doc.status}
+                    <span class="badge ${paper.status === 'published' ? 'badge-success' : 'badge-gray'} text-xs capitalize">
+                        ${paper.status || 'published'}
                     </span>
                 </td>
-                <td class="table-cell text-right space-x-3">
-                    <button onclick="window.previewPdf('${doc.file_id}', '${doc.title.replace(/'/g, "\\'")}')" class="text-gray-500 hover:text-gray-700 text-sm font-medium">
-                        Preview
-                    </button>
-                    <a href="#past-papers/edit/${doc.$id}" class="text-primary hover:text-secondary text-sm font-medium">
-                        Edit
-                    </a>
+                <td class="table-cell text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        ${paper.file_id ? `
+                            <button class="btn-preview-pdf px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1"
+                                data-file="${paper.file_id}"
+                                data-title="${paper.title}">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                <span>Preview</span>
+                            </button>
+                        ` : ''}
+                        <a href="#past-papers/edit/${paper.$id}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition">
+                            Edit
+                        </a>
+                    </div>
                 </td>
             </tr>
         `).join('');
-        
-        window.previewPdf = (fileId, title) => {
-            const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.pastPapersBucket}/files/${fileId}/view?project=${CONFIG.projectId}`;
-            document.getElementById('pdf-modal-title').textContent = title;
-            document.getElementById('pdf-iframe').src = url;
-            document.getElementById('pdf-preview-modal').classList.add('modal-active');
-        };
+
+        if (window.lucide) window.lucide.createIcons();
+
+        // Bind Preview
+        tbody.querySelectorAll('.btn-preview-pdf').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const b = e.currentTarget;
+                const fileId = b.dataset.file;
+                const title = b.dataset.title;
+                const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.pastPapersBucket}/files/${fileId}/view?project=${CONFIG.projectId}`;
+
+                document.getElementById('pdf-modal-title').textContent = title;
+                document.getElementById('pdf-iframe').src = url;
+
+                const modal = document.getElementById('pdf-preview-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.add('modal-active'), 10);
+            });
+        });
     },
 
     async renderForm(container, id) {
         let paper = { 
-            title: '', university_id: '', test_id: '', university_name: '', test_name: '', 
-            year: new Date().getFullYear(), subject: '', is_premium: false, status: 'draft', file_id: '' 
+            title: '', university_id: '', university_name: '', test_name: '', 
+            year: new Date().getFullYear(), subject: '', is_premium: false, status: 'published', file_id: '' 
         };
         let isEdit = false;
 
-        container.innerHTML = `<div class="p-8 text-center text-gray-500">Loading form...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading form...</div>`;
 
         let universities = [];
         try {
-            const uniRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.universitiesCol, [Query.limit(100), Query.equal('active', true)]);
+            const uniRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.universitiesCol, [Query.limit(100)]);
             universities = uniRes.documents;
-        } catch(e) {}
+        } catch (e) {}
 
         if (id) {
             try {
@@ -207,150 +328,126 @@ export const pastPapersController = {
             }
         }
 
-        const currentUrl = paper.file_id ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.pastPapersBucket}/files/${paper.file_id}/view?project=${CONFIG.projectId}` : '';
-
         container.innerHTML = `
-            <div class="mb-6 flex items-center">
-                <a href="#past-papers" class="text-gray-500 hover:text-gray-700 mr-4">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </a>
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900">${isEdit ? 'Edit Past Paper' : 'Upload Past Paper'}</h2>
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="flex items-center justify-between">
+                    <a href="#past-papers" class="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span>Back to Past Papers</span>
+                    </a>
+                    <span class="text-xs font-bold text-slate-400">${isEdit ? 'Edit Paper' : 'Upload New Paper'}</span>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <form id="paper-form" class="p-6 space-y-6">
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8">
+                    <h2 class="text-lg font-bold text-slate-900 mb-6">${isEdit ? 'Edit Past Paper Properties' : 'Upload Past Paper PDF'}</h2>
+
+                    <form id="paper-form" class="space-y-4">
+                        <div>
+                            <label class="form-label">Paper Title *</label>
+                            <input type="text" id="p-title" required value="${paper.title || ''}" placeholder="e.g. FAST NUCES 2024 Past Examination Paper" class="form-input">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="form-label">Title *</label>
-                                <input type="text" id="p-title" class="form-input" required value="${paper.title}">
+                                <label class="form-label">Associated University *</label>
+                                <select id="p-uni" required class="form-input">
+                                    <option value="">Select University</option>
+                                    ${universities.map(u => `<option value="${u.$id}" data-name="${u.name || u.short_name}" ${paper.university_id === u.$id ? 'selected' : ''}>${u.name || u.short_name}</option>`).join('')}
+                                </select>
                             </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="form-label">University *</label>
-                                    <select id="p-uni" class="form-input" required>
-                                        <option value="">Select University</option>
-                                        ${universities.map(u => `<option value="${u.$id}" data-name="${u.name}" ${paper.university_id === u.$id ? 'selected' : ''}>${u.name}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="form-label">Test Name *</label>
-                                    <input type="text" id="p-test" class="form-input" required value="${paper.test_name}" placeholder="e.g. NET, NTS">
-                                </div>
-                                <div>
-                                    <label class="form-label">Year *</label>
-                                    <input type="number" id="p-year" class="form-input" required value="${paper.year}">
-                                </div>
-                                <div>
-                                    <label class="form-label">Subject *</label>
-                                    <input type="text" id="p-subject" class="form-input" required value="${paper.subject}">
-                                </div>
-                                <div>
-                                    <label class="form-label">Status</label>
-                                    <select id="p-status" class="form-input">
-                                        <option value="draft" ${paper.status === 'draft' ? 'selected' : ''}>Draft</option>
-                                        <option value="published" ${paper.status === 'published' ? 'selected' : ''}>Published</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-center">
-                                    <label class="flex items-center space-x-2 mt-6 cursor-pointer">
-                                        <input type="checkbox" id="p-premium" class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" ${paper.is_premium ? 'checked' : ''}>
-                                        <span class="text-sm font-medium text-gray-700">Premium Paper</span>
-                                    </label>
-                                </div>
+                            <div>
+                                <label class="form-label">Test Name</label>
+                                <input type="text" id="p-test" value="${paper.test_name || ''}" placeholder="e.g. NET, NU-Test" class="form-input">
                             </div>
+                            <div>
+                                <label class="form-label">Examination Year *</label>
+                                <input type="number" id="p-year" required value="${paper.year || 2024}" min="2000" max="2030" class="form-input">
+                            </div>
+                            <div>
+                                <label class="form-label">Subject / Faculty</label>
+                                <input type="text" id="p-subject" value="${paper.subject || ''}" placeholder="e.g. CS & Engineering" class="form-input">
+                            </div>
+                            <div>
+                                <label class="form-label">Publish Status</label>
+                                <select id="p-status" class="form-input">
+                                    <option value="published" ${paper.status === 'published' ? 'selected' : ''}>Published</option>
+                                    <option value="draft" ${paper.status === 'draft' ? 'selected' : ''}>Draft</option>
+                                    <option value="archived" ${paper.status === 'archived' ? 'selected' : ''}>Archived</option>
+                                </select>
+                            </div>
+                            <div class="pt-6 flex items-center gap-2">
+                                <input type="checkbox" id="p-premium" class="w-4 h-4 text-sky-600 rounded" ${paper.is_premium ? 'checked' : ''}>
+                                <label for="p-premium" class="text-xs font-bold text-amber-800">Lock for Premium Students Only 👑</label>
+                            </div>
+                        </div>
 
-                            <div class="pt-6">
-                                <label class="form-label">PDF File ${isEdit ? '(Leave empty to keep current)' : '*'}</label>
-                                <input type="file" id="p-file" class="form-input" accept="application/pdf" ${!isEdit ? 'required' : ''}>
-                                ${isEdit && paper.file_id ? `<p class="text-sm text-green-600 mt-2"><i data-lucide="check-circle" class="inline w-4 h-4 mr-1"></i> Has existing file</p>` : ''}
-                            </div>
-                            
-                            <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                                <a href="#past-papers" class="btn-secondary">Cancel</a>
-                                <button type="submit" class="btn-primary" id="save-btn">Save Paper</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-[600px] flex flex-col">
-                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                            <h3 class="text-sm font-bold text-gray-900">PDF Preview</h3>
+                        <!-- PDF File Input -->
+                        <div class="pt-4 border-t border-slate-100">
+                            <label class="form-label">PDF File Document ${isEdit ? '(Leave empty to preserve existing file)' : '*'}</label>
+                            <input type="file" id="p-file" accept="application/pdf" class="form-input text-xs" ${!isEdit ? 'required' : ''}>
+                            ${isEdit && paper.file_id ? `<p class="text-xs text-emerald-600 mt-1 font-semibold">✓ Existing PDF attached (ID: ${paper.file_id})</p>` : ''}
                         </div>
-                        <div class="flex-1 bg-gray-100 relative">
-                            ${currentUrl ? `<iframe src="${currentUrl}" class="w-full h-full border-0"></iframe>` : `<div class="absolute inset-0 flex items-center justify-center text-gray-400">No PDF selected</div>`}
+
+                        <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <a href="#past-papers" class="btn-secondary">Cancel</a>
+                            <button type="submit" id="p-submit-btn" class="btn-primary">
+                                <span>Save Past Paper</span>
+                            </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         `;
+
         if (window.lucide) window.lucide.createIcons();
 
-        document.getElementById('paper-form').addEventListener('submit', async (e) => {
+        document.getElementById('paper-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('save-btn');
+            const btn = document.getElementById('p-submit-btn');
             btn.disabled = true;
-            btn.textContent = 'Uploading...';
+            btn.textContent = 'Saving...';
 
             try {
                 let fileId = paper.file_id;
                 const fileInput = document.getElementById('p-file');
-                
+
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    if (file.type !== 'application/pdf') throw new Error("Only PDF files are allowed");
-                    const permissions = [
-                        Permission.read(Role.any()),
-                        Permission.update(Role.team('6a11fc7200202af19f62')),
-                        Permission.delete(Role.team('6a11fc7200202af19f62'))
-                    ];
-                    const upRes = await storage.createFile(CONFIG.pastPapersBucket, ID.unique(), file, permissions);
+                    const upRes = await storage.createFile(CONFIG.pastPapersBucket, ID.unique(), file);
                     fileId = upRes.$id;
                 }
 
                 const uniSelect = document.getElementById('p-uni');
                 const uniName = uniSelect.options[uniSelect.selectedIndex].getAttribute('data-name');
-                const user = await authService.getCurrentUser();
 
-                const data = {
-                    title: document.getElementById('p-title').value,
+                const payload = {
+                    title: document.getElementById('p-title').value.trim(),
                     university_id: uniSelect.value,
                     university_name: uniName,
-                    test_id: document.getElementById('p-test').value, // In fungepweb, test_name and test_id might be similar
-                    test_name: document.getElementById('p-test').value,
-                    year: parseInt(document.getElementById('p-year').value),
-                    subject: document.getElementById('p-subject').value,
+                    test_name: document.getElementById('p-test').value.trim(),
+                    year: parseInt(document.getElementById('p-year').value) || 2024,
+                    subject: document.getElementById('p-subject').value.trim(),
                     is_premium: document.getElementById('p-premium').checked,
                     status: document.getElementById('p-status').value,
-                    file_id: fileId,
-                    updated_at: new Date().toISOString()
+                    file_id: fileId
                 };
 
                 if (isEdit) {
-                    await databases.updateDocument(CONFIG.databaseId, CONFIG.pastPapersCol, id, data);
-                    showToast("Paper updated", "success");
+                    await databases.updateDocument(CONFIG.databaseId, CONFIG.pastPapersCol, id, payload);
+                    showToast("Past paper updated successfully", "success");
                 } else {
-                    data.created_at = new Date().toISOString();
-                    data.uploaded_by = user.$id;
-                    const permissions = [
-                        Permission.read(Role.any()),
-                        Permission.update(Role.team('6a11fc7200202af19f62')),
-                        Permission.delete(Role.team('6a11fc7200202af19f62'))
-                    ];
-                    await databases.createDocument(CONFIG.databaseId, CONFIG.pastPapersCol, ID.unique(), data, permissions);
-                    showToast("Paper published", "success");
+                    await databases.createDocument(CONFIG.databaseId, CONFIG.pastPapersCol, ID.unique(), payload);
+                    showToast("Past paper uploaded successfully", "success");
                 }
+
                 window.location.hash = '#past-papers';
-            } catch (error) {
-                console.error(error);
-                showToast(error.message || "Failed to save paper", "error");
+
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || "Failed to save paper", "error");
+            } finally {
                 btn.disabled = false;
-                btn.textContent = 'Save Paper';
+                btn.textContent = 'Save Past Paper';
             }
         });
     }

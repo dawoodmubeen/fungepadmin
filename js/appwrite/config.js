@@ -5,28 +5,34 @@ const CONFIG = {
   projectId: '6a11e2ba00082db8f17a',
   databaseId: '6a635234001c8046ec7d',
   
-  // Collections
+  // 12 Collections
   usersCol: 'users',
-  pastPapersCol: 'past_papers',
-  universitiesCol: 'universities',
-  premiumRequestsCol: 'premium_requests',
   subscriptionsCol: 'subscriptions',
-  feedbackCol: 'feedback',
-  reviewsCol: 'reviews',
+  premiumRequestsCol: 'premium_requests',
   couponsCol: 'coupons',
   couponUsagesCol: 'coupon_usages',
-  userRewardsCol: 'user_rewards',
+  mockTestsCol: 'mock_tests',
+  testAttemptsCol: 'test_attempts',
+  attemptAnswersCol: 'attempt_answers',
+  universitiesCol: 'universities',
+  pastPapersCol: 'past_papers',
+  feedbackCol: 'feedback',
+  notificationsCol: 'notifications',
   
-  // Buckets
-  mockJsonsBucket: 'mock-jsons',
-  generatedResultsBucket: 'generated-results',
-  resultTemplatesBucket: 'result-templates',
+  // Compatibility aliases
+  reviewsCol: 'feedback', // Reviews are handled under feedback with category='review'
+  
+  // 7 Storage Buckets
   profileImagesBucket: 'profile-images',
   paymentReceiptsBucket: 'payment-receipts',
+  mockJsonsBucket: 'mock-jsons',
+  testPatternsBucket: 'test_patterns',
+  solutionsBucket: 'solutions',
   pastPapersBucket: 'past-papers',
+  supportAttachmentsBucket: 'support-attachments',
 
   // Functions
-  premiumOpsFunctionId: '6a941f71001c52d43dbd' // Placeholder, user will need to update this
+  premiumOpsFunctionId: '6a941f71001c52d43dbd'
 };
 
 const client = new Client()

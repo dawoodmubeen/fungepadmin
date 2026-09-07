@@ -3,92 +3,112 @@ import { showToast } from '../components/toast.js';
 
 export const subscriptionsController = {
     async render(container, args) {
-        if (args.length > 0 && args[0] === 'edit' && args[1]) {
-            this.renderForm(container, args[1]);
+        if (args && args.length > 0 && args[0] === 'edit' && args[1]) {
+            await this.renderForm(container, args[1]);
         } else {
-            this.renderList(container);
+            await this.renderList(container);
         }
     },
 
     async renderList(container) {
         container.innerHTML = `
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Subscriptions</h2>
-                <p class="text-sm text-gray-500">Manage user premium subscriptions.</p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-4 border-b border-gray-200 bg-gray-50 flex gap-4">
-                    <div class="relative flex-1 max-w-md">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-                        <input type="text" id="search-sub" placeholder="Search by name, email..." class="form-input pl-9">
+            <div class="space-y-6">
+                <!-- Action Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Active Subscriptions</h1>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">Financial Ledger</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">Audit active student subscriptions, expiration periods, and cancellations.</p>
                     </div>
-                    <select id="filter-status" class="form-input max-w-[150px]">
-                        <option value="all">All Statuses</option>
-                        <option value="active" selected>Active</option>
-                        <option value="expired">Expired</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
                 </div>
-                
-                <div class="table-container">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 table-header">
-                            <tr>
-                                <th>User</th>
-                                <th>Plan</th>
-                                <th>Status</th>
-                                <th>Start Date</th>
-                                <th>Expiry Date</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="subs-tbody" class="bg-white divide-y divide-gray-200">
-                            <tr><td colspan="6" class="text-center py-8 text-gray-500">Loading subscriptions...</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- Filters Toolbar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="relative flex-1 w-full md:max-w-md">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-sub" placeholder="Search by student, email, or TID..." class="form-input pl-10 text-xs sm:text-sm">
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <select id="filter-sub-status" class="form-input text-xs sm:text-sm py-2">
+                            <option value="all">All Statuses</option>
+                            <option value="active" selected>Active Subscriptions</option>
+                            <option value="expired">Expired</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
                 </div>
-                
-                <div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                    <button id="prev-page" class="btn-secondary" disabled>Previous</button>
-                    <span id="page-info" class="text-sm text-gray-600">Page 1</span>
-                    <button id="next-page" class="btn-secondary">Next</button>
+
+                <!-- Table -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div class="table-responsive-wrapper">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <thead class="table-header">
+                                <tr>
+                                    <th>Student & Account</th>
+                                    <th>Plan & Paid Amount</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>Expiry Date</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subs-tbody" class="divide-y divide-slate-100 bg-white">
+                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading subscriptions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <button id="prev-sub-page" class="btn-secondary text-xs" disabled>Previous</button>
+                        <span id="sub-page-info" class="text-xs font-bold text-slate-600">Page 1</span>
+                        <button id="next-sub-page" class="btn-secondary text-xs">Next</button>
+                    </div>
                 </div>
             </div>
         `;
+
         if (window.lucide) window.lucide.createIcons();
 
         this.currentPage = 1;
         this.limit = 20;
         this.statusFilter = 'active';
         this.subs = [];
-        
-        await this.loadPage(1);
 
-        document.getElementById('search-sub').addEventListener('input', (e) => {
+        await this.loadPage(1);
+        this.setupEvents();
+    },
+
+    setupEvents() {
+        const searchInput = document.getElementById('search-sub');
+        const filterStatus = document.getElementById('filter-sub-status');
+
+        searchInput?.addEventListener('input', (e) => {
             const q = e.target.value.toLowerCase();
             const filtered = this.subs.filter(s => 
                 (s.user_name && s.user_name.toLowerCase().includes(q)) || 
+                (s.user_email && s.user_email.toLowerCase().includes(q)) ||
                 (s.email && s.email.toLowerCase().includes(q)) ||
-                (s.user_email && s.user_email.toLowerCase().includes(q))
+                (s.transaction_id && s.transaction_id.toLowerCase().includes(q))
             );
-            this.renderTableRows(document.getElementById('subs-tbody'), filtered);
+            this.renderTableRows(filtered);
         });
 
-        document.getElementById('filter-status').addEventListener('change', (e) => {
+        filterStatus?.addEventListener('change', (e) => {
             this.statusFilter = e.target.value;
             this.currentPage = 1;
             this.loadPage(1);
         });
-        
-        document.getElementById('prev-page').addEventListener('click', () => {
+
+        document.getElementById('prev-sub-page')?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
                 this.loadPage(this.currentPage);
             }
         });
-        
-        document.getElementById('next-page').addEventListener('click', () => {
+
+        document.getElementById('next-sub-page')?.addEventListener('click', () => {
             this.currentPage++;
             this.loadPage(this.currentPage);
         });
@@ -101,205 +121,178 @@ export const subscriptionsController = {
                 Query.limit(this.limit),
                 Query.offset((page - 1) * this.limit)
             ];
-            
+
             if (this.statusFilter !== 'all') {
                 queries.push(Query.equal('status', this.statusFilter));
             }
-            
+
             const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.subscriptionsCol, queries);
             this.subs = res.documents;
-            
-            const tbody = document.getElementById('subs-tbody');
-            if (this.subs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">No subscriptions found.</td></tr>`;
-            } else {
-                this.renderTableRows(tbody, this.subs);
-            }
-            
-            document.getElementById('page-info').textContent = `Page ${page}`;
-            document.getElementById('prev-page').disabled = page === 1;
-            document.getElementById('next-page').disabled = res.documents.length < this.limit;
-            
+            this.renderTableRows(this.subs);
+
+            document.getElementById('sub-page-info').textContent = `Page ${page} (Showing ${res.documents.length} of ${res.total || res.documents.length})`;
+            document.getElementById('prev-sub-page').disabled = page === 1;
+            document.getElementById('next-sub-page').disabled = res.documents.length < this.limit;
+
         } catch (error) {
             console.error(error);
             showToast("Failed to load subscriptions", "error");
         }
     },
 
-    renderTableRows(tbody, data) {
-        tbody.innerHTML = data.map(doc => {
-            return `
-            <tr class="table-row">
-                <td class="table-cell">
-                    <p class="font-medium text-gray-900">${doc.user_name || 'Unknown'}</p>
-                    <p class="text-xs text-gray-500">${doc.email || doc.user_email || 'No email'}</p>
-                </td>
-                <td class="table-cell font-medium">
-                    ${doc.plan}
-                </td>
-                <td class="table-cell">
-                    <span class="badge ${doc.status === 'active' ? 'badge-success' : (doc.status === 'expired' ? 'badge-warning' : 'badge-error')} capitalize">
-                        ${doc.status}
-                    </span>
-                </td>
-                <td class="table-cell text-sm text-gray-600">
-                    ${new Date(doc.started_at || doc.start_date || doc.$createdAt).toLocaleDateString()}
-                </td>
-                <td class="table-cell text-sm text-gray-600">
-                    ${new Date(doc.expires_at || doc.expiry_date || new Date()).toLocaleDateString()}
-                </td>
-                <td class="table-cell text-right">
-                    <a href="#subscriptions/edit/${doc.$id}" class="text-primary hover:text-secondary text-sm font-medium">
-                        Edit
-                    </a>
-                </td>
-            </tr>
-        `}).join('');
-    },
+    renderTableRows(data) {
+        const tbody = document.getElementById('subs-tbody');
+        if (!tbody) return;
 
-    async renderForm(container, id) {
-        let sub = null;
-        try {
-            sub = await databases.getDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, id);
-        } catch (err) {
-            showToast("Failed to load subscription", "error");
-            window.location.hash = '#subscriptions';
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No subscription records found.</td></tr>`;
             return;
         }
 
-        container.innerHTML = `
-            <div class="mb-6 flex items-center">
-                <a href="#subscriptions" class="text-gray-500 hover:text-gray-700 mr-4">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </a>
-                <h2 class="text-2xl font-bold text-gray-900">Edit Subscription</h2>
-            </div>
+        tbody.innerHTML = data.map(sub => {
+            const statusBadge = sub.status === 'active'
+                ? '<span class="badge badge-success text-xs">Active</span>'
+                : sub.status === 'expired'
+                ? '<span class="badge badge-warning text-xs">Expired</span>'
+                : '<span class="badge badge-error text-xs">Cancelled</span>';
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden max-w-3xl">
-                <form id="sub-form" class="p-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="form-label">User Name</label>
-                            <input type="text" class="form-input bg-gray-50" readonly value="${sub.user_name}">
-                        </div>
-                        <div>
-                            <label class="form-label">User Email</label>
-                            <input type="text" class="form-input bg-gray-50" readonly value="${sub.email || sub.user_email || ''}">
-                        </div>
-                        <div>
-                            <label class="form-label">Plan *</label>
-                            <input type="text" id="s-plan" class="form-input" required value="${sub.plan}">
-                        </div>
-                        <div>
-                            <label class="form-label">Status *</label>
-                            <select id="s-status" class="form-input" required>
-                                <option value="active" ${sub.status === 'active' ? 'selected' : ''}>Active</option>
-                                <option value="expired" ${sub.status === 'expired' ? 'selected' : ''}>Expired</option>
-                                <option value="cancelled" ${sub.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">Start Date *</label>
-                            <input type="date" id="s-start" class="form-input" required value="${(sub.started_at || sub.start_date) ? (sub.started_at || sub.start_date).split('T')[0] : ''}">
-                        </div>
-                        <div>
-                            <label class="form-label">Expiry Date *</label>
-                            <input type="date" id="s-expiry" class="form-input" required value="${(sub.expires_at || sub.expiry_date) ? (sub.expires_at || sub.expiry_date).split('T')[0] : ''}">
-                        </div>
-                        <div id="cancel-reason-container" class="col-span-1 md:col-span-2 hidden">
-                            <label class="form-label">Cancellation Reason *</label>
-                            <textarea id="s-cancel-reason" class="form-input" rows="3" placeholder="Reason for cancellation..."></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                        <a href="#subscriptions" class="btn-secondary">Back</a>
-                        <button type="submit" class="btn-primary" id="save-btn">Save Changes</button>
-                    </div>
-                </form>
-            </div>
-        `;
+            return `
+                <tr class="table-row">
+                    <td class="table-cell">
+                        <p class="font-bold text-slate-900 text-xs">${sub.user_name || 'Student'}</p>
+                        <p class="text-slate-400 text-[11px] font-mono">${sub.email || sub.user_email || sub.user_id}</p>
+                    </td>
+                    <td class="table-cell text-xs">
+                        <span class="font-bold text-slate-900 capitalize">${sub.plan || 'Premium'}</span>
+                        <p class="text-slate-400 font-mono">PKR ${sub.amount || sub.amount_paid || 1500}</p>
+                    </td>
+                    <td class="table-cell">
+                        ${statusBadge}
+                    </td>
+                    <td class="table-cell text-xs font-mono text-slate-500">
+                        ${new Date(sub.start_date || sub.started_at || sub.$createdAt).toLocaleDateString()}
+                    </td>
+                    <td class="table-cell text-xs font-mono text-slate-500">
+                        ${new Date(sub.expiry_date || sub.expires_at || new Date()).toLocaleDateString()}
+                    </td>
+                    <td class="table-cell text-right">
+                        <a href="#subscriptions/edit/${sub.$id}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition">
+                            Edit Period
+                        </a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
         if (window.lucide) window.lucide.createIcons();
+    },
 
-        const statusSelect = document.getElementById('s-status');
-        const reasonContainer = document.getElementById('cancel-reason-container');
-        const origStatus = sub.status;
+    async renderForm(container, subId) {
+        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading subscription data...</div>`;
 
-        statusSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'cancelled' && origStatus === 'active') {
-                reasonContainer.classList.remove('hidden');
-                document.getElementById('s-cancel-reason').required = true;
-            } else {
-                reasonContainer.classList.add('hidden');
-                document.getElementById('s-cancel-reason').required = false;
-            }
-        });
+        try {
+            const sub = await databases.getDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, subId);
 
-        document.getElementById('sub-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
+            container.innerHTML = `
+                <div class="max-w-xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <a href="#subscriptions" class="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                            <span>Back to Subscriptions</span>
+                        </a>
+                        <span class="text-xs font-bold text-slate-400">Edit Subscription</span>
+                    </div>
 
-            try {
-                const newStatus = statusSelect.value;
-                
-                if (newStatus === 'cancelled' && origStatus === 'active') {
-                    // Use Appwrite Function for cancellation
-                    const cancelReason = document.getElementById('s-cancel-reason').value.trim();
-                    if (!cancelReason) {
-                        alert("Cancellation reason is required.");
-                        btn.disabled = false;
-                        btn.textContent = 'Save Changes';
-                        return;
+                    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8">
+                        <h2 class="text-base font-bold text-slate-900 mb-6">Modify Subscription Duration</h2>
+
+                        <form id="sub-edit-form" class="space-y-4">
+                            <div>
+                                <label class="form-label">Student</label>
+                                <input type="text" readonly value="${sub.user_name || sub.user_id}" class="form-input bg-slate-50 font-bold">
+                            </div>
+                            <div>
+                                <label class="form-label">Plan Tier</label>
+                                <input type="text" id="se-plan" value="${sub.plan || 'premium'}" class="form-input">
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <select id="se-status" class="form-input text-xs">
+                                    <option value="active" ${sub.status === 'active' ? 'selected' : ''}>Active</option>
+                                    <option value="expired" ${sub.status === 'expired' ? 'selected' : ''}>Expired</option>
+                                    <option value="cancelled" ${sub.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" id="se-start" value="${(sub.start_date || sub.started_at || '').split('T')[0]}" class="form-input text-xs">
+                                </div>
+                                <div>
+                                    <label class="form-label">Expiry Date</label>
+                                    <input type="date" id="se-expiry" value="${(sub.expiry_date || sub.expires_at || '').split('T')[0]}" class="form-input text-xs">
+                                </div>
+                            </div>
+
+                            <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                                <a href="#subscriptions" class="btn-secondary">Cancel</a>
+                                <button type="submit" id="se-save-btn" class="btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            if (window.lucide) window.lucide.createIcons();
+
+            document.getElementById('sub-edit-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('se-save-btn');
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+
+                try {
+                    const status = document.getElementById('se-status').value;
+                    const plan = document.getElementById('se-plan').value;
+                    const start = document.getElementById('se-start').value;
+                    const expiry = document.getElementById('se-expiry').value;
+
+                    await databases.updateDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, subId, {
+                        status: status,
+                        plan: plan,
+                        start_date: start ? new Date(start).toISOString() : new Date().toISOString(),
+                        expiry_date: expiry ? new Date(expiry).toISOString() : new Date().toISOString()
+                    });
+
+                    // Sync user premium state if cancelled
+                    if (status === 'cancelled' || status === 'expired') {
+                        const uRes = await databases.listDocuments(CONFIG.databaseId, CONFIG.usersCol, [
+                            Query.equal('auth_id', sub.user_id),
+                            Query.limit(1)
+                        ]);
+                        if (uRes.documents.length > 0) {
+                            await databases.updateDocument(CONFIG.databaseId, CONFIG.usersCol, uRes.documents[0].$id, {
+                                is_premium: false
+                            });
+                        }
                     }
 
-                    const payload = JSON.stringify({
-                        action: 'cancel',
-                        subscriptionId: id,
-                        cancellationReason: cancelReason
-                    });
+                    showToast("Subscription updated successfully", "success");
+                    window.location.hash = '#subscriptions';
 
-                    const execution = await functions.createExecution(
-                        CONFIG.premiumOpsFunctionId,
-                        payload,
-                        false
-                    );
-
-                    if (execution.status === 'failed') throw new Error(execution.responseBody || "Server function failed.");
-                    const response = JSON.parse(execution.responseBody);
-                    if (!response.success) throw new Error(response.error || "Operation failed.");
-                    
-                } else {
-                    // Regular update (fallback for manually tweaking dates/plans)
-                    const payload = JSON.stringify({
-                        action: 'edit',
-                        subscriptionId: id,
-                        plan: document.getElementById('s-plan').value,
-                        status: newStatus,
-                        started_at: new Date(document.getElementById('s-start').value).toISOString(),
-                        expires_at: new Date(document.getElementById('s-expiry').value).toISOString()
-                    });
-
-                    const execution = await functions.createExecution(
-                        CONFIG.premiumOpsFunctionId,
-                        payload,
-                        false
-                    );
-
-                    if (execution.status === 'failed') throw new Error(execution.responseBody || "Server function failed.");
-                    const response = JSON.parse(execution.responseBody);
-                    if (!response.success) throw new Error(response.error || "Operation failed.");
+                } catch (err) {
+                    console.error(err);
+                    showToast(err.message || "Failed to update subscription", "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Save Changes';
                 }
-                
-                showToast("Subscription updated successfully", "success");
-                window.location.hash = '#subscriptions';
-            } catch (error) {
-                console.error(error);
-                showToast(error.message || "Failed to save subscription", "error");
-                btn.disabled = false;
-                btn.textContent = 'Save Changes';
-            }
-        });
+            });
+
+        } catch (error) {
+            console.error(error);
+            showToast("Failed to load subscription", "error");
+            window.location.hash = '#subscriptions';
+        }
     }
 };

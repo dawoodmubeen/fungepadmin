@@ -716,7 +716,8 @@ export const mockTestsController = {
             valBox.innerHTML += `> [UPLOAD] Uploading validated files to Appwrite Storage...<br>`;
 
             // Upload files to respective buckets
-            const testId = validation.testId || `test_${Date.now()}`;
+            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `test-${Date.now()}`;
+            const testId = validation.testId || slug;
             const patternFileObj = new File([filePattern], `${testId}_pattern.json`, { type: 'application/json' });
             const mcqFileObj = new File([fileMcq], `${testId}_mcqs.json`, { type: 'application/json' });
 
@@ -733,9 +734,6 @@ export const mockTestsController = {
 
             const now = new Date().toISOString();
             const docId = ID.unique();
-
-            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `test-${Date.now()}`;
-            const testId = validation.testId || slug;
 
             await databases.createDocument(CONFIG.databaseId, CONFIG.mockTestsCol, docId, {
                 test_id: testId,

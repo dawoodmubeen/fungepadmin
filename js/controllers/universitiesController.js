@@ -197,11 +197,9 @@ export const universitiesController = {
                     name: document.getElementById('u-name').value.trim(),
                     short_name: document.getElementById('u-short').value.trim(),
                     slug: document.getElementById('u-slug').value.trim().toLowerCase(),
-                    city: document.getElementById('u-city').value.trim(),
-                    official_website: document.getElementById('u-url').value.trim(),
-                    logo_url: document.getElementById('u-logo').value.trim(),
                     description: document.getElementById('u-desc').value.trim(),
-                    active: document.getElementById('u-active').checked
+                    active: document.getElementById('u-active').checked,
+                    is_active: document.getElementById('u-active').checked
                 };
 
                 if (isEdit) {

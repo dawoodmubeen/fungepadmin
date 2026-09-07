@@ -518,9 +518,8 @@ export const mockTestsController = {
 
                     <!-- Specs -->
                     <td class="table-cell text-xs text-slate-600">
-                        <p class="font-semibold text-slate-800">${test.duration_minutes || 120} Minutes</p>
-                        <p class="text-slate-400">${test.type || test.test_type || 'Full Length'}</p>
-                        <p class="text-[11px] text-slate-500">${test.total_questions || '?'} Questions</p>
+                        <p class="font-semibold text-slate-800">${test.test_type || test.type || 'Mock Test'}</p>
+                        <p class="text-slate-400 font-mono text-[11px]">${test.slug || test.test_id || ''}</p>
                     </td>
 
                     <!-- Status & Access -->
@@ -735,19 +734,22 @@ export const mockTestsController = {
             const now = new Date().toISOString();
             const docId = ID.unique();
 
+            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `test-${Date.now()}`;
+            const testId = validation.testId || slug;
+
             await databases.createDocument(CONFIG.databaseId, CONFIG.mockTestsCol, docId, {
+                test_id: testId,
                 title: title,
+                slug: slug,
                 university_id: uniId,
                 university_name: uniName,
-                duration_minutes: duration,
+                test_type: type || 'Mock',
+                description: null,
                 is_premium: isPremium,
                 status: status,
-                type: type,
                 pattern_file_id: patternUp.$id,
                 mcq_file_id: mcqUp.$id,
                 solution_file_id: solUp ? solUp.$id : null,
-                total_questions: validation.totalQuestions,
-                total_marks: validation.totalMarks || 100.0,
                 created_at: now,
                 updated_at: now
             });
@@ -839,9 +841,6 @@ export const mockTestsController = {
                 updated_at: new Date().toISOString()
             };
 
-            if (validation.totalQuestions) updatePayload.total_questions = validation.totalQuestions;
-            if (validation.totalMarks) updatePayload.total_marks = validation.totalMarks;
-
             // Upload only the files that changed
             if (filePattern) {
                 const up = await storage.createFile(CONFIG.testPatternsBucket, ID.unique(), filePattern);
@@ -898,7 +897,6 @@ export const mockTestsController = {
 
             await databases.updateDocument(CONFIG.databaseId, CONFIG.mockTestsCol, docId, {
                 title,
-                duration_minutes: duration,
                 status,
                 is_premium: isPremium,
                 updated_at: new Date().toISOString()

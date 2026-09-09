@@ -175,6 +175,7 @@ export const premiumRequestsController = {
         document.getElementById('next-order-page')?.addEventListener('click', () => {
             this.currentPage++;
             this.applyFilterAndRender();
+        });
     },
 
     renderTableRows(data) {

@@ -26,7 +26,11 @@ export const dashboardController = {
                                 <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
                                 <span id="dash-banner-orders-btn">Review Orders</span>
                             </a>
-                            <a href="#mock-tests" class="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition flex items-center gap-2">
+                            <a href="#sessions" class="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition flex items-center gap-2">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                <span>User Sessions</span>
+                            </a>
+                            <a href="#mock-tests" class="hidden sm:flex px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition items-center gap-2">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
                                 <span>Mock Tests</span>
                             </a>

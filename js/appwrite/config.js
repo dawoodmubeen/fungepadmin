@@ -1,4 +1,5 @@
-const { Client, Account, Databases, Storage, Functions, ID, Query, Permission, Role } = window.Appwrite;
+const AppwriteObj = (typeof window !== 'undefined' && window.Appwrite) ? window.Appwrite : {};
+const { Client, Account, Databases, Storage, Functions, ID, Query, Permission, Role } = AppwriteObj;
 
 const CONFIG = {
   endpoint: 'https://sgp.cloud.appwrite.io/v1',
@@ -18,6 +19,7 @@ const CONFIG = {
   pastPapersCol: 'past_papers',
   feedbackCol: 'feedback',
   notificationsCol: 'notifications',
+  userSessionsCol: 'user_sessions',
   
   // Compatibility aliases
   reviewsCol: 'feedback', // Reviews are handled under feedback with category='review'
@@ -35,13 +37,21 @@ const CONFIG = {
   premiumOpsFunctionId: '6a941f71001c52d43dbd'
 };
 
-const client = new Client()
-  .setEndpoint(CONFIG.endpoint)
-  .setProject(CONFIG.projectId);
+let client = null;
+let account = null;
+let databases = null;
+let storage = null;
+let functions = null;
 
-const account = new Account(client);
-const databases = new Databases(client);
-const storage = new Storage(client);
-const functions = new Functions(client);
+if (Client) {
+  client = new Client()
+    .setEndpoint(CONFIG.endpoint)
+    .setProject(CONFIG.projectId);
+
+  account = new Account(client);
+  databases = new Databases(client);
+  storage = new Storage(client);
+  functions = new Functions(client);
+}
 
 export { client, account, databases, storage, functions, CONFIG, ID, Query, Permission, Role };

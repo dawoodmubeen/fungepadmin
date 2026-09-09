@@ -1,5 +1,6 @@
 import { databases, storage, CONFIG, ID, Query } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const mockTestsController = {
     async render(container) {
@@ -366,13 +367,18 @@ export const mockTestsController = {
         const filterAccess = document.getElementById('filter-access');
 
         const applyFilter = () => {
-            const q = (searchInput?.value || '').toLowerCase();
+            const q = (searchInput?.value || '').toLowerCase().trim();
             const u = filterUni?.value || 'all';
             const s = filterStatus?.value || 'all';
             const a = filterAccess?.value || 'all';
 
             const filtered = (this.testsData || []).filter(item => {
-                const matchQ = (item.title || '').toLowerCase().includes(q) || (item.university_name || '').toLowerCase().includes(q);
+                const matchQ = !q || 
+                    (item.title || '').toLowerCase().includes(q) || 
+                    (item.university_name || '').toLowerCase().includes(q) ||
+                    (item.subject || '').toLowerCase().includes(q) ||
+                    (item.slug || '').toLowerCase().includes(q) ||
+                    (item.$id || '').toLowerCase().includes(q);
                 const matchU = u === 'all' || item.university_id === u;
                 const matchS = s === 'all' || item.status === s;
                 const matchA = a === 'all' || (a === 'premium' ? item.is_premium : !item.is_premium);
@@ -382,7 +388,7 @@ export const mockTestsController = {
             this.renderTableRows(filtered);
         };
 
-        searchInput?.addEventListener('input', applyFilter);
+        searchInput?.addEventListener('input', debounce(applyFilter, 200));
         filterUni?.addEventListener('change', applyFilter);
         filterStatus?.addEventListener('change', applyFilter);
         filterAccess?.addEventListener('change', applyFilter);
@@ -419,11 +425,9 @@ export const mockTestsController = {
 
     async loadTestsList() {
         try {
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.mockTestsCol, [
-                Query.orderDesc('$createdAt'),
-                Query.limit(100)
+            this.testsData = await fetchAllDocuments(CONFIG.databaseId, CONFIG.mockTestsCol, [
+                Query.orderDesc('$createdAt')
             ]);
-            this.testsData = res.documents;
             this.renderTableRows(this.testsData);
         } catch (error) {
             console.error("Failed to load mock tests:", error);

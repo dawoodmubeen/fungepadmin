@@ -1,5 +1,6 @@
 import { databases, CONFIG, Query, functions } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const subscriptionsController = {
     async render(container, args) {
@@ -74,70 +75,100 @@ export const subscriptionsController = {
         this.currentPage = 1;
         this.limit = 20;
         this.statusFilter = 'active';
-        this.subs = [];
+        this.allSubs = [];
 
-        await this.loadPage(1);
+        await this.loadAllSubs();
         this.setupEvents();
+    },
+
+    async loadAllSubs() {
+        const tbody = document.getElementById('subs-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading subscriptions from database...</td></tr>`;
+        }
+
+        try {
+            this.allSubs = await fetchAllDocuments(CONFIG.databaseId, CONFIG.subscriptionsCol, [
+                Query.orderDesc('$createdAt')
+            ]);
+            this.applyFilterAndRender();
+        } catch (error) {
+            console.error("Failed to load subscriptions:", error);
+            showToast("Failed to load subscriptions", "error");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading subscriptions.</td></tr>`;
+            }
+        }
+    },
+
+    applyFilterAndRender() {
+        const searchInput = document.getElementById('search-sub');
+        const filterStatus = document.getElementById('filter-sub-status');
+
+        const q = searchInput?.value || '';
+        const statusVal = filterStatus?.value || 'all';
+
+        const filterFn = (s) => {
+            if (statusVal !== 'all' && (s.status || '').toLowerCase() !== statusVal.toLowerCase()) return false;
+            return true;
+        };
+
+        const searchFields = [
+            'user_name',
+            'user_email',
+            'email',
+            'transaction_id',
+            'plan',
+            'user_id'
+        ];
+
+        const result = filterAndPaginate(this.allSubs, {
+            searchQuery: q,
+            searchFields,
+            filterFn,
+            page: this.currentPage,
+            limit: this.limit
+        });
+
+        this.renderTableRows(result.items);
+
+        const pageInfo = document.getElementById('sub-page-info');
+        if (pageInfo) {
+            pageInfo.textContent = result.total > 0
+                ? `Page ${result.currentPage} of ${result.totalPages} (Showing ${result.startIndex}–${result.endIndex} of ${result.total} subscriptions)`
+                : 'No matching subscriptions found';
+        }
+
+        const prevBtn = document.getElementById('prev-sub-page');
+        if (prevBtn) prevBtn.disabled = !result.hasPrev;
+
+        const nextBtn = document.getElementById('next-sub-page');
+        if (nextBtn) nextBtn.disabled = !result.hasNext;
     },
 
     setupEvents() {
         const searchInput = document.getElementById('search-sub');
         const filterStatus = document.getElementById('filter-sub-status');
 
-        searchInput?.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = this.subs.filter(s => 
-                (s.user_name && s.user_name.toLowerCase().includes(q)) || 
-                (s.user_email && s.user_email.toLowerCase().includes(q)) ||
-                (s.email && s.email.toLowerCase().includes(q)) ||
-                (s.transaction_id && s.transaction_id.toLowerCase().includes(q))
-            );
-            this.renderTableRows(filtered);
-        });
-
-        filterStatus?.addEventListener('change', (e) => {
-            this.statusFilter = e.target.value;
+        const onFilterChange = () => {
             this.currentPage = 1;
-            this.loadPage(1);
-        });
+            this.applyFilterAndRender();
+        };
+
+        searchInput?.addEventListener('input', debounce(() => onFilterChange(), 200));
+        filterStatus?.addEventListener('change', onFilterChange);
 
         document.getElementById('prev-sub-page')?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                this.loadPage(this.currentPage);
+                this.applyFilterAndRender();
             }
         });
 
         document.getElementById('next-sub-page')?.addEventListener('click', () => {
             this.currentPage++;
-            this.loadPage(this.currentPage);
+            this.applyFilterAndRender();
         });
-    },
-
-    async loadPage(page) {
-        try {
-            const queries = [
-                Query.orderDesc('$createdAt'),
-                Query.limit(this.limit),
-                Query.offset((page - 1) * this.limit)
-            ];
-
-            if (this.statusFilter !== 'all') {
-                queries.push(Query.equal('status', this.statusFilter));
-            }
-
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.subscriptionsCol, queries);
-            this.subs = res.documents;
-            this.renderTableRows(this.subs);
-
-            document.getElementById('sub-page-info').textContent = `Page ${page} (Showing ${res.documents.length} of ${res.total || res.documents.length})`;
-            document.getElementById('prev-sub-page').disabled = page === 1;
-            document.getElementById('next-sub-page').disabled = res.documents.length < this.limit;
-
-        } catch (error) {
-            console.error(error);
-            showToast("Failed to load subscriptions", "error");
-        }
     },
 
     renderTableRows(data) {

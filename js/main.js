@@ -16,6 +16,7 @@ import { subscriptionsController } from './controllers/subscriptionsController.j
 import { mockTestsController } from './controllers/mockTestsController.js';
 import { attemptsController } from './controllers/attemptsController.js';
 import { validatorController } from './controllers/validatorController.js';
+import { sessionsController } from './controllers/sessionsController.js';
 
 class App {
     constructor() {
@@ -24,6 +25,8 @@ class App {
         this.controllers = {
             'dashboard': dashboardController,
             'attempts': attemptsController,
+            'sessions': sessionsController,
+            'user-sessions': sessionsController,
             'mock-tests': mockTestsController,
             'past-papers': pastPapersController,
             'universities': universitiesController,
@@ -219,6 +222,8 @@ class App {
             const titleMap = {
                 'dashboard': 'Executive KPI Dashboard',
                 'attempts': 'Live Exam Telemetry & Sessions',
+                'sessions': 'User Sessions & Logins Telemetry',
+                'user-sessions': 'User Sessions & Logins Telemetry',
                 'mock-tests': 'Mock Test Builder & 3-File Manager',
                 'past-papers': 'Past Papers & Digital Drive',
                 'universities': 'Universities & Pattern Blueprint Editor',

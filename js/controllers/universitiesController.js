@@ -1,5 +1,6 @@
 import { databases, storage, CONFIG, Query, ID } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const universitiesController = {
     async render(container, args) {
@@ -35,6 +36,14 @@ export const universitiesController = {
                     </div>
                 </div>
 
+                <!-- Toolbar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="relative flex-1 w-full sm:max-w-md">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-university" placeholder="Search universities by name, short code, city..." class="form-input pl-10 text-xs sm:text-sm">
+                    </div>
+                </div>
+
                 <!-- Universities Directory Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="uni-cards-container">
                     ${Array(6).fill(0).map(() => `
@@ -49,7 +58,24 @@ export const universitiesController = {
         `;
 
         if (window.lucide) window.lucide.createIcons();
+        this.allUniversities = [];
         await this.loadUniversitiesList();
+        this.setupEvents();
+    },
+
+    setupEvents() {
+        const searchInput = document.getElementById('search-university');
+        searchInput?.addEventListener('input', debounce((e) => {
+            const q = (e.target.value || '').trim().toLowerCase();
+            const filtered = (this.allUniversities || []).filter(u =>
+                (u.name && u.name.toLowerCase().includes(q)) ||
+                (u.short_name && u.short_name.toLowerCase().includes(q)) ||
+                (u.city && u.city.toLowerCase().includes(q)) ||
+                (u.slug && u.slug.toLowerCase().includes(q)) ||
+                (u.$id && u.$id.toLowerCase().includes(q))
+            );
+            this.renderCards(filtered);
+        }, 200));
     },
 
     async loadUniversitiesList() {
@@ -57,56 +83,61 @@ export const universitiesController = {
         if (!container) return;
 
         try {
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.universitiesCol, [
-                Query.limit(50)
+            this.allUniversities = await fetchAllDocuments(CONFIG.databaseId, CONFIG.universitiesCol, [
+                Query.orderDesc('$createdAt')
             ]);
-
-            if (res.documents.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400">
-                        <i data-lucide="school" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
-                        <p class="text-sm font-bold text-slate-700">No universities in directory</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Click "Add University" above to start adding institutes.</p>
-                    </div>
-                `;
-                if (window.lucide) window.lucide.createIcons();
-                return;
-            }
-
-            container.innerHTML = res.documents.map(uni => `
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold text-lg border border-sky-100 p-2 flex-shrink-0">
-                                ${uni.logo_url ? `<img src="${uni.logo_url}" class="w-full h-full object-contain">` : `<i data-lucide="school" class="w-7 h-7"></i>`}
-                            </div>
-                            <span class="badge ${uni.active !== false ? 'badge-success' : 'badge-gray'} text-[10px]">
-                                ${uni.active !== false ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-
-                        <h3 class="text-base font-extrabold text-slate-900">${uni.name}</h3>
-                        <p class="text-xs font-semibold text-sky-600 mt-0.5">${uni.short_name || uni.slug}</p>
-                        <p class="text-xs text-slate-400 mt-2 line-clamp-2">${uni.description || 'Premier entrance test target university.'}</p>
-                    </div>
-
-                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span class="text-slate-400">${uni.city || 'Pakistan'}</span>
-                        <div class="flex items-center gap-2">
-                            <a href="#universities/edit/${uni.$id}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
-                                Edit Details
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            if (window.lucide) window.lucide.createIcons();
-
+            this.renderCards(this.allUniversities);
         } catch (error) {
             console.error("Failed to load universities:", error);
             container.innerHTML = `<div class="col-span-full p-8 text-center text-rose-500">Failed to load universities.</div>`;
         }
+    },
+
+    renderCards(universities) {
+        const container = document.getElementById('uni-cards-container');
+        if (!container) return;
+
+        if (!universities || universities.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400">
+                    <i data-lucide="school" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-sm font-bold text-slate-700">No universities match criteria</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Try clearing the search box or register a new university.</p>
+                </div>
+            `;
+            if (window.lucide) window.lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = universities.map(uni => `
+            <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between">
+                <div>
+                    <div class="flex items-start justify-between gap-3 mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold text-lg border border-sky-100 p-2 flex-shrink-0">
+                            ${uni.logo_url ? `<img src="${uni.logo_url}" class="w-full h-full object-contain">` : `<i data-lucide="school" class="w-7 h-7"></i>`}
+                        </div>
+                        <span class="badge ${uni.active !== false ? 'badge-success' : 'badge-gray'} text-[10px]">
+                            ${uni.active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+
+                    <h3 class="text-base font-extrabold text-slate-900">${uni.name}</h3>
+                    <p class="text-xs font-semibold text-sky-600 mt-0.5">${uni.short_name || uni.slug}</p>
+                    <p class="text-xs text-slate-400 mt-2 line-clamp-2">${uni.description || 'Premier entrance test target university.'}</p>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span class="text-slate-400">${uni.city || 'Pakistan'}</span>
+                    <div class="flex items-center gap-2">
+                        <a href="#universities/edit/${uni.$id}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
+                            Edit Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        if (window.lucide) window.lucide.createIcons();
     },
 
     async renderForm(container, id) {

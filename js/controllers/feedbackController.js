@@ -1,5 +1,6 @@
 import { databases, CONFIG, Query } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const feedbackController = {
     async render(container, args) {
@@ -24,8 +25,8 @@ export const feedbackController = {
                     </div>
                 </div>
 
-                <!-- Category Tabs Toolbar -->
-                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-wrap gap-2 items-center justify-between">
+                <!-- Category Tabs Toolbar & Search -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
                     <div class="flex flex-wrap gap-1.5" id="category-tabs">
                         <button class="cat-tab px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white" data-cat="all">All Tickets</button>
                         <button class="cat-tab px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="bug">Bugs</button>
@@ -34,7 +35,11 @@ export const feedbackController = {
                         <button class="cat-tab px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="review">Reviews</button>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="relative flex-1 md:w-64">
+                            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="search-feedback" placeholder="Search tickets across all pages..." class="form-input pl-10 text-xs py-1.5">
+                        </div>
                         <select id="filter-ticket-status" class="form-input text-xs py-1.5">
                             <option value="all">All Statuses</option>
                             <option value="pending" selected>Pending</option>
@@ -60,9 +65,22 @@ export const feedbackController = {
                                 </tr>
                             </thead>
                             <tbody id="feedback-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading tickets...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading tickets from database...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <button id="prev-ticket-page" class="btn-secondary text-xs" disabled>
+                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                            <span>Previous</span>
+                        </button>
+                        <span id="ticket-page-info" class="text-xs font-bold text-slate-600">Page 1</span>
+                        <button id="next-ticket-page" class="btn-secondary text-xs" disabled>
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -72,13 +90,82 @@ export const feedbackController = {
 
         this.selectedCategory = 'all';
         this.statusFilter = 'pending';
-        this.tickets = [];
+        this.currentPage = 1;
+        this.limit = 20;
+        this.allTickets = [];
 
-        await this.loadTickets();
+        await this.loadAllTickets();
         this.setupEvents();
     },
 
+    async loadAllTickets() {
+        const tbody = document.getElementById('feedback-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading tickets from database...</td></tr>`;
+        }
+
+        try {
+            this.allTickets = await fetchAllDocuments(CONFIG.databaseId, CONFIG.feedbackCol, [
+                Query.orderDesc('$createdAt')
+            ]);
+            this.applyFilterAndRender();
+        } catch (error) {
+            console.error(error);
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Failed to load tickets.</td></tr>`;
+            }
+        }
+    },
+
+    applyFilterAndRender() {
+        const searchInput = document.getElementById('search-feedback');
+        const q = searchInput?.value || '';
+
+        const filterFn = (item) => {
+            if (this.selectedCategory !== 'all' && item.category !== this.selectedCategory) return false;
+            if (this.statusFilter !== 'all' && item.status !== this.statusFilter) return false;
+            return true;
+        };
+
+        const searchFields = [
+            'student_name',
+            'student_email',
+            'email',
+            'subject',
+            'message',
+            'ticket_id'
+        ];
+
+        const result = filterAndPaginate(this.allTickets, {
+            searchQuery: q,
+            searchFields,
+            filterFn,
+            page: this.currentPage,
+            limit: this.limit
+        });
+
+        this.renderTableRows(result.items);
+
+        const pageInfo = document.getElementById('ticket-page-info');
+        if (pageInfo) {
+            pageInfo.textContent = result.total > 0
+                ? `Page ${result.currentPage} of ${result.totalPages} (Showing ${result.startIndex}–${result.endIndex} of ${result.total} tickets)`
+                : 'No matching tickets found';
+        }
+
+        const prevBtn = document.getElementById('prev-ticket-page');
+        if (prevBtn) prevBtn.disabled = !result.hasPrev;
+
+        const nextBtn = document.getElementById('next-ticket-page');
+        if (nextBtn) nextBtn.disabled = !result.hasNext;
+    },
+
     setupEvents() {
+        const onFilterChange = () => {
+            this.currentPage = 1;
+            this.applyFilterAndRender();
+        };
+
         document.querySelectorAll('.cat-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 document.querySelectorAll('.cat-tab').forEach(t => {
@@ -90,41 +177,28 @@ export const feedbackController = {
                 b.classList.add('bg-sky-600', 'text-white');
 
                 this.selectedCategory = b.dataset.cat;
-                this.loadTickets();
+                onFilterChange();
             });
         });
 
         document.getElementById('filter-ticket-status')?.addEventListener('change', (e) => {
             this.statusFilter = e.target.value;
-            this.loadTickets();
+            onFilterChange();
         });
-    },
 
-    async loadTickets() {
-        try {
-            const queries = [
-                Query.orderDesc('$createdAt'),
-                Query.limit(50)
-            ];
+        document.getElementById('search-feedback')?.addEventListener('input', debounce(() => onFilterChange(), 200));
 
-            if (this.selectedCategory !== 'all') {
-                queries.push(Query.equal('category', this.selectedCategory));
+        document.getElementById('prev-ticket-page')?.addEventListener('click', () => {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.applyFilterAndRender();
             }
+        });
 
-            if (this.statusFilter !== 'all') {
-                queries.push(Query.equal('status', this.statusFilter));
-            }
-
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.feedbackCol, queries);
-            this.tickets = res.documents;
-            this.renderTableRows(this.tickets);
-
-        } catch (error) {
-            console.error(error);
-            document.getElementById('feedback-tbody').innerHTML = `
-                <tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs">Failed to load tickets.</td></tr>
-            `;
-        }
+        document.getElementById('next-ticket-page')?.addEventListener('click', () => {
+            this.currentPage++;
+            this.applyFilterAndRender();
+        });
     },
 
     renderTableRows(data) {

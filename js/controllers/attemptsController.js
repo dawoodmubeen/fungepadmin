@@ -1,5 +1,6 @@
 import { databases, CONFIG, Query } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const attemptsController = {
     async render(container) {
@@ -79,6 +80,19 @@ export const attemptsController = {
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <button id="prev-att-page" class="btn-secondary text-xs" disabled>
+                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                            <span>Previous</span>
+                        </button>
+                        <span id="att-page-info" class="text-xs font-bold text-slate-600">Page 1</span>
+                        <button id="next-att-page" class="btn-secondary text-xs" disabled>
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -107,6 +121,10 @@ export const attemptsController = {
 
         if (window.lucide) window.lucide.createIcons();
 
+        this.currentPage = 1;
+        this.limit = 20;
+        this.attemptsData = [];
+
         await this.loadAttempts();
         this.setupEvents();
     },
@@ -129,31 +147,32 @@ export const attemptsController = {
         const searchInput = document.getElementById('search-attempts');
         const filterStatus = document.getElementById('filter-att-status');
 
-        const applyFilter = () => {
-            const q = (searchInput?.value || '').toLowerCase();
-            const s = filterStatus?.value || 'all';
-
-            const filtered = (this.attemptsData || []).filter(item => {
-                const matchQ = (item.test_title || '').toLowerCase().includes(q) || (item.user_id || '').toLowerCase().includes(q) || (item.$id || '').toLowerCase().includes(q);
-                const matchS = s === 'all' || item.status === s;
-                return matchQ && matchS;
-            });
-
-            this.renderTableRows(filtered);
+        const onFilterChange = () => {
+            this.currentPage = 1;
+            this.applyFilterAndRender();
         };
 
-        searchInput?.addEventListener('input', applyFilter);
-        filterStatus?.addEventListener('change', applyFilter);
+        searchInput?.addEventListener('input', debounce(() => onFilterChange(), 200));
+        filterStatus?.addEventListener('change', onFilterChange);
+
+        document.getElementById('prev-att-page')?.addEventListener('click', () => {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.applyFilterAndRender();
+            }
+        });
+
+        document.getElementById('next-att-page')?.addEventListener('click', () => {
+            this.currentPage++;
+            this.applyFilterAndRender();
+        });
     },
 
     async loadAttempts() {
         try {
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.testAttemptsCol, [
-                Query.orderDesc('started_at'),
-                Query.limit(100)
+            this.attemptsData = await fetchAllDocuments(CONFIG.databaseId, CONFIG.testAttemptsCol, [
+                Query.orderDesc('started_at')
             ]);
-
-            this.attemptsData = res.documents;
 
             // Compute summary
             let inProgress = 0;
@@ -172,19 +191,59 @@ export const attemptsController = {
                 }
             });
 
-            document.getElementById('stat-in-progress').textContent = inProgress;
-            document.getElementById('stat-completed').textContent = completed;
-            document.getElementById('stat-avg-score').textContent = pctCount > 0 ? `${Math.round(totalPct / pctCount)}%` : '--';
-            document.getElementById('stat-total-monitored').textContent = res.total || this.attemptsData.length;
+            const elInProg = document.getElementById('stat-in-progress');
+            const elComp = document.getElementById('stat-completed');
+            const elAvg = document.getElementById('stat-avg-score');
+            const elTotal = document.getElementById('stat-total-monitored');
 
-            this.renderTableRows(this.attemptsData);
+            if (elInProg) elInProg.textContent = inProgress;
+            if (elComp) elComp.textContent = completed;
+            if (elAvg) elAvg.textContent = pctCount > 0 ? `${Math.round(totalPct / pctCount)}%` : '--';
+            if (elTotal) elTotal.textContent = this.attemptsData.length;
 
+            this.applyFilterAndRender();
         } catch (error) {
             console.error("Failed to load attempts:", error);
-            document.getElementById('attempts-tbody').innerHTML = `
-                <tr><td colspan="7" class="text-center py-12 text-rose-500 text-xs">Failed to load telemetry data.</td></tr>
-            `;
+            showToast("Failed to load attempts telemetry", "error");
         }
+    },
+
+    applyFilterAndRender() {
+        const searchInput = document.getElementById('search-attempts');
+        const filterStatus = document.getElementById('filter-att-status');
+
+        const q = searchInput?.value || '';
+        const s = filterStatus?.value || 'all';
+
+        const filterFn = (item) => {
+            if (s !== 'all' && item.status !== s) return false;
+            return true;
+        };
+
+        const searchFields = ['test_title', 'user_id', '$id'];
+
+        const result = filterAndPaginate(this.attemptsData, {
+            searchQuery: q,
+            searchFields,
+            filterFn,
+            page: this.currentPage,
+            limit: this.limit
+        });
+
+        this.renderTableRows(result.items);
+
+        const pageInfo = document.getElementById('att-page-info');
+        if (pageInfo) {
+            pageInfo.textContent = result.total > 0
+                ? `Page ${result.currentPage} of ${result.totalPages} (Showing ${result.startIndex}–${result.endIndex} of ${result.total} attempts)`
+                : 'No matching attempts found';
+        }
+
+        const prevBtn = document.getElementById('prev-att-page');
+        if (prevBtn) prevBtn.disabled = !result.hasPrev;
+
+        const nextBtn = document.getElementById('next-att-page');
+        if (nextBtn) nextBtn.disabled = !result.hasNext;
     },
 
     renderTableRows(data) {

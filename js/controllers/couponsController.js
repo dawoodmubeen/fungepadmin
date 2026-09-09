@@ -1,5 +1,6 @@
 import { databases, CONFIG, Query, ID } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const couponsController = {
     async render(container, args) {
@@ -32,6 +33,14 @@ export const couponsController = {
                     </a>
                 </div>
 
+                <!-- Toolbar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="relative flex-1 w-full sm:max-w-md">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-coupon" placeholder="Search promo codes by code or rule..." class="form-input pl-10 text-xs sm:text-sm">
+                    </div>
+                </div>
+
                 <!-- Coupons Table -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                     <div class="table-responsive-wrapper">
@@ -56,74 +65,92 @@ export const couponsController = {
         `;
 
         if (window.lucide) window.lucide.createIcons();
+
+        this.allCoupons = [];
         await this.loadCoupons();
+        this.setupEvents();
+    },
+
+    setupEvents() {
+        const searchInput = document.getElementById('search-coupon');
+        searchInput?.addEventListener('input', debounce((e) => {
+            const q = (e.target.value || '').trim().toLowerCase();
+            const filtered = (this.allCoupons || []).filter(c => 
+                (c.code && c.code.toLowerCase().includes(q)) ||
+                (c.discount_type && c.discount_type.toLowerCase().includes(q)) ||
+                (c.$id && c.$id.toLowerCase().includes(q))
+            );
+            this.renderTableRows(filtered);
+        }, 200));
     },
 
     async loadCoupons() {
         try {
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.couponsCol, [
-                Query.orderDesc('$createdAt'),
-                Query.limit(50)
+            this.allCoupons = await fetchAllDocuments(CONFIG.databaseId, CONFIG.couponsCol, [
+                Query.orderDesc('$createdAt')
             ]);
-
-            const tbody = document.getElementById('coupons-tbody');
-            if (!tbody) return;
-
-            if (res.documents.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No promo codes registered.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = res.documents.map(coupon => {
-                const discountText = coupon.discount_type === 'percentage'
-                    ? `${coupon.discount_value}% Off ${coupon.maximum_discount ? `(Cap PKR ${coupon.maximum_discount})` : ''}`
-                    : `Flat PKR ${coupon.discount_value} Off`;
-
-                const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
-                const statusBadge = (!coupon.is_active || isExpired)
-                    ? `<span class="badge badge-gray text-xs">${isExpired ? 'Expired' : 'Inactive'}</span>`
-                    : `<span class="badge badge-success text-xs">Active</span>`;
-
-                return `
-                    <tr class="table-row">
-                        <td class="table-cell">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 font-mono font-extrabold text-sm border border-sky-200/60">${coupon.code}</span>
-                            </div>
-                        </td>
-                        <td class="table-cell text-xs">
-                            <p class="font-extrabold text-slate-900">${discountText}</p>
-                            ${coupon.minimum_purchase ? `<p class="text-slate-400 text-[10px]">Min. purchase PKR ${coupon.minimum_purchase}</p>` : ''}
-                        </td>
-                        <td class="table-cell text-xs font-mono">
-                            <span class="font-bold text-slate-800">${coupon.total_uses || 0}</span> / ${coupon.max_uses ? coupon.max_uses : '∞'} uses
-                        </td>
-                        <td class="table-cell text-xs font-mono text-slate-500">
-                            ${coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : 'No expiry'}
-                        </td>
-                        <td class="table-cell">
-                            ${statusBadge}
-                        </td>
-                        <td class="table-cell text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="#coupons/audit/${coupon.$id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
-                                    Audit Log
-                                </a>
-                                <a href="#coupons/edit/${coupon.$id}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition">
-                                    Edit
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            if (window.lucide) window.lucide.createIcons();
-
+            this.renderTableRows(this.allCoupons);
         } catch (error) {
             console.error("Failed to load coupons:", error);
-            document.getElementById('coupons-tbody').innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs">Failed to load coupons.</td></tr>`;
+            const tbody = document.getElementById('coupons-tbody');
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs">Failed to load coupons.</td></tr>`;
         }
+    },
+
+    renderTableRows(data) {
+        const tbody = document.getElementById('coupons-tbody');
+        if (!tbody) return;
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No promo codes found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(coupon => {
+            const discountText = coupon.discount_type === 'percentage'
+                ? `${coupon.discount_value}% Off ${coupon.maximum_discount ? `(Cap PKR ${coupon.maximum_discount})` : ''}`
+                : `Flat PKR ${coupon.discount_value} Off`;
+
+            const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
+            const statusBadge = (!coupon.is_active || isExpired)
+                ? `<span class="badge badge-gray text-xs">${isExpired ? 'Expired' : 'Inactive'}</span>`
+                : `<span class="badge badge-success text-xs">Active</span>`;
+
+            return `
+                <tr class="table-row">
+                    <td class="table-cell">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 font-mono font-extrabold text-sm border border-sky-200/60">${coupon.code}</span>
+                        </div>
+                    </td>
+                    <td class="table-cell text-xs">
+                        <p class="font-extrabold text-slate-900">${discountText}</p>
+                        ${coupon.minimum_purchase ? `<p class="text-slate-400 text-[10px]">Min. purchase PKR ${coupon.minimum_purchase}</p>` : ''}
+                    </td>
+                    <td class="table-cell text-xs font-mono">
+                        <span class="font-bold text-slate-800">${coupon.total_uses || 0}</span> / ${coupon.max_uses ? coupon.max_uses : '∞'} uses
+                    </td>
+                    <td class="table-cell text-xs text-slate-500 font-mono">
+                        ${coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : 'No Expiry'}
+                    </td>
+                    <td class="table-cell">
+                        ${statusBadge}
+                    </td>
+                    <td class="table-cell text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="#coupons/audit/${coupon.code}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                                Audit Logs
+                            </a>
+                            <a href="#coupons/edit/${coupon.$id}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition">
+                                Edit
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons();
     },
 
     async renderForm(container, id) {

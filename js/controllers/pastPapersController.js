@@ -1,6 +1,7 @@
 import { databases, storage, CONFIG, Query, ID, Permission, Role } from '../appwrite/config.js';
 import { authService } from '../services/authService.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const pastPapersController = {
     async render(container, args) {
@@ -130,43 +131,100 @@ export const pastPapersController = {
 
         this.currentPage = 1;
         this.limit = 20;
-        this.papers = [];
+        this.allPapers = [];
         this.accessFilter = 'all';
 
-        await this.loadPage(1);
+        await this.loadAllPapers();
         this.setupEvents();
+    },
+
+    async loadAllPapers() {
+        const tbody = document.getElementById('papers-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading past papers from database...</td></tr>`;
+        }
+
+        try {
+            this.allPapers = await fetchAllDocuments(CONFIG.databaseId, CONFIG.pastPapersCol, [
+                Query.orderDesc('$createdAt')
+            ]);
+            this.applyFilterAndRender();
+        } catch (error) {
+            console.error("Failed to load past papers:", error);
+            showToast("Failed to load past papers", "error");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading past papers.</td></tr>`;
+            }
+        }
+    },
+
+    applyFilterAndRender() {
+        const searchInput = document.getElementById('search-paper');
+        const filterAccess = document.getElementById('filter-paper-access');
+
+        const q = searchInput?.value || '';
+        const accessVal = filterAccess?.value || 'all';
+
+        const filterFn = (p) => {
+            if (accessVal === 'premium' && !p.is_premium) return false;
+            if (accessVal === 'free' && p.is_premium) return false;
+            return true;
+        };
+
+        const searchFields = [
+            'title',
+            'university_name',
+            'subject',
+            'exam_type',
+            'year'
+        ];
+
+        const result = filterAndPaginate(this.allPapers, {
+            searchQuery: q,
+            searchFields,
+            filterFn,
+            page: this.currentPage,
+            limit: this.limit
+        });
+
+        this.renderTableRows(result.items);
+
+        const pageInfo = document.getElementById('paper-page-info');
+        if (pageInfo) {
+            pageInfo.textContent = result.total > 0
+                ? `Page ${result.currentPage} of ${result.totalPages} (Showing ${result.startIndex}–${result.endIndex} of ${result.total} papers)`
+                : 'No matching papers found';
+        }
+
+        const prevBtn = document.getElementById('prev-paper-page');
+        if (prevBtn) prevBtn.disabled = !result.hasPrev;
+
+        const nextBtn = document.getElementById('next-paper-page');
+        if (nextBtn) nextBtn.disabled = !result.hasNext;
     },
 
     setupEvents() {
         const searchInput = document.getElementById('search-paper');
         const filterAccess = document.getElementById('filter-paper-access');
 
-        searchInput?.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = this.papers.filter(p => 
-                (p.title && p.title.toLowerCase().includes(q)) || 
-                (p.university_name && p.university_name.toLowerCase().includes(q)) ||
-                (p.subject && p.subject.toLowerCase().includes(q))
-            );
-            this.renderTableRows(filtered);
-        });
-
-        filterAccess?.addEventListener('change', (e) => {
-            this.accessFilter = e.target.value;
+        const onFilterChange = () => {
             this.currentPage = 1;
-            this.loadPage(1);
-        });
+            this.applyFilterAndRender();
+        };
+
+        searchInput?.addEventListener('input', debounce(() => onFilterChange(), 200));
+        filterAccess?.addEventListener('change', onFilterChange);
 
         document.getElementById('prev-paper-page')?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                this.loadPage(this.currentPage);
+                this.applyFilterAndRender();
             }
         });
 
         document.getElementById('next-paper-page')?.addEventListener('click', () => {
             this.currentPage++;
-            this.loadPage(this.currentPage);
+            this.applyFilterAndRender();
         });
 
         // PDF Modal
@@ -182,7 +240,6 @@ export const pastPapersController = {
         // Drive Modal
         const driveModal = document.getElementById('drive-modal');
         document.getElementById('configure-drive-btn')?.addEventListener('click', () => {
-            // Populate from localStorage or appwrite config
             document.getElementById('drive-free-url').value = localStorage.getItem('fungep_free_drive') || '';
             document.getElementById('drive-premium-url').value = localStorage.getItem('fungep_premium_drive') || '';
             driveModal.classList.remove('hidden');
@@ -205,31 +262,6 @@ export const pastPapersController = {
             showToast("Global Drive links saved!", "success");
             closeDrive();
         });
-    },
-
-    async loadPage(page) {
-        try {
-            const queries = [
-                Query.orderDesc('$createdAt'),
-                Query.limit(this.limit),
-                Query.offset((page - 1) * this.limit)
-            ];
-
-            if (this.accessFilter === 'premium') queries.push(Query.equal('is_premium', true));
-            if (this.accessFilter === 'free') queries.push(Query.equal('is_premium', false));
-
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.pastPapersCol, queries);
-            this.papers = res.documents;
-            this.renderTableRows(this.papers);
-
-            document.getElementById('paper-page-info').textContent = `Page ${page}`;
-            document.getElementById('prev-paper-page').disabled = page === 1;
-            document.getElementById('next-paper-page').disabled = res.documents.length < this.limit;
-
-        } catch (error) {
-            console.error(error);
-            showToast("Failed to load past papers", "error");
-        }
     },
 
     renderTableRows(data) {

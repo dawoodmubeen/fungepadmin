@@ -30,6 +30,10 @@ export function renderSidebar(adminDoc) {
                         <i data-lucide="activity" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors flex-shrink-0"></i>
                         <span>Live Exam Telemetry</span>
                     </a>
+                    <a href="#sessions" class="nav-link group flex items-center gap-3 px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-600 hover:text-sky-700 hover:bg-sky-50/70 transition-colors" data-target="sessions">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors flex-shrink-0"></i>
+                        <span>User Sessions & Logins</span>
+                    </a>
                 </nav>
             </div>
 

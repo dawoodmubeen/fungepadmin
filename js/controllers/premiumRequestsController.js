@@ -1,5 +1,6 @@
 import { databases, storage, CONFIG, Query, ID, functions } from '../appwrite/config.js';
 import { showToast } from '../components/toast.js';
+import { fetchAllDocuments, filterAndPaginate, debounce } from '../utils/dbHelper.js';
 
 export const premiumRequestsController = {
     async render(container, args) {
@@ -81,70 +82,99 @@ export const premiumRequestsController = {
         this.currentPage = 1;
         this.limit = 20;
         this.statusFilter = 'pending';
-        this.orders = [];
+        this.allOrders = [];
         
-        await this.loadPage(1);
+        await this.loadAllOrders();
         this.setupEvents();
+    },
+
+    async loadAllOrders() {
+        const tbody = document.getElementById('orders-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue from database...</td></tr>`;
+        }
+
+        try {
+            this.allOrders = await fetchAllDocuments(CONFIG.databaseId, CONFIG.premiumRequestsCol, [
+                Query.orderDesc('$createdAt')
+            ]);
+            this.applyFilterAndRender();
+        } catch (error) {
+            console.error("Failed to load orders:", error);
+            showToast("Failed to load orders", "error");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading orders.</td></tr>`;
+            }
+        }
+    },
+
+    applyFilterAndRender() {
+        const searchInput = document.getElementById('search-orders');
+        const filterStatus = document.getElementById('filter-order-status');
+
+        const q = searchInput?.value || '';
+        const statusVal = filterStatus?.value || 'pending';
+
+        const filterFn = (o) => {
+            if (statusVal !== 'all' && (o.status || '').toLowerCase() !== statusVal.toLowerCase()) return false;
+            return true;
+        };
+
+        const searchFields = [
+            'user_name',
+            'email',
+            'transaction_id',
+            'order_id',
+            'user_id',
+            'plan'
+        ];
+
+        const result = filterAndPaginate(this.allOrders, {
+            searchQuery: q,
+            searchFields,
+            filterFn,
+            page: this.currentPage,
+            limit: this.limit
+        });
+
+        this.renderTableRows(result.items);
+
+        const pageInfo = document.getElementById('order-page-info');
+        if (pageInfo) {
+            pageInfo.textContent = result.total > 0
+                ? `Page ${result.currentPage} of ${result.totalPages} (Showing ${result.startIndex}–${result.endIndex} of ${result.total} orders)`
+                : 'No matching orders found';
+        }
+
+        const prevBtn = document.getElementById('prev-order-page');
+        if (prevBtn) prevBtn.disabled = !result.hasPrev;
+
+        const nextBtn = document.getElementById('next-order-page');
+        if (nextBtn) nextBtn.disabled = !result.hasNext;
     },
 
     setupEvents() {
         const searchInput = document.getElementById('search-orders');
         const filterStatus = document.getElementById('filter-order-status');
 
-        searchInput?.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = this.orders.filter(o => 
-                (o.user_name && o.user_name.toLowerCase().includes(q)) || 
-                (o.email && o.email.toLowerCase().includes(q)) ||
-                (o.transaction_id && o.transaction_id.toLowerCase().includes(q)) ||
-                (o.order_id && o.order_id.toLowerCase().includes(q))
-            );
-            this.renderTableRows(filtered);
-        });
-
-        filterStatus?.addEventListener('change', (e) => {
-            this.statusFilter = e.target.value;
+        const onFilterChange = () => {
             this.currentPage = 1;
-            this.loadPage(1);
-        });
+            this.applyFilterAndRender();
+        };
+
+        searchInput?.addEventListener('input', debounce(() => onFilterChange(), 200));
+        filterStatus?.addEventListener('change', onFilterChange);
 
         document.getElementById('prev-order-page')?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                this.loadPage(this.currentPage);
+                this.applyFilterAndRender();
             }
         });
 
         document.getElementById('next-order-page')?.addEventListener('click', () => {
             this.currentPage++;
-            this.loadPage(this.currentPage);
-        });
-    },
-
-    async loadPage(page) {
-        try {
-            const queries = [
-                Query.orderAsc('submitted_at'),
-                Query.limit(this.limit),
-                Query.offset((page - 1) * this.limit)
-            ];
-
-            if (this.statusFilter !== 'all') {
-                queries.push(Query.equal('status', this.statusFilter));
-            }
-
-            const res = await databases.listDocuments(CONFIG.databaseId, CONFIG.premiumRequestsCol, queries);
-            this.orders = res.documents;
-            this.renderTableRows(this.orders);
-
-            document.getElementById('order-page-info').textContent = `Page ${page} (Showing ${res.documents.length} of ${res.total || res.documents.length})`;
-            document.getElementById('prev-order-page').disabled = page === 1;
-            document.getElementById('next-order-page').disabled = res.documents.length < this.limit;
-
-        } catch (error) {
-            console.error(error);
-            showToast("Failed to load orders", "error");
-        }
+            this.applyFilterAndRender();
     },
 
     renderTableRows(data) {

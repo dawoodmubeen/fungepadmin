@@ -141,7 +141,7 @@ export const universitiesController = {
     },
 
     async renderForm(container, id) {
-        let uni = { name: '', short_name: '', slug: '', city: '', description: '', official_website: '', logo_url: '', active: true };
+        let uni = { name: '', short_name: '', slug: '', description: '', logo_file_id: '', active: true, is_active: true, sort_order: 0, tests: '[]', created_at: '', updated_at: '' };
         let isEdit = false;
 
         if (id) {
@@ -183,24 +183,24 @@ export const universitiesController = {
                                 <input type="text" id="u-slug" required value="${uni.slug || ''}" placeholder="fast-nuces" class="form-input">
                             </div>
                             <div>
-                                <label class="form-label">Primary City</label>
-                                <input type="text" id="u-city" value="${uni.city || ''}" placeholder="Islamabad / Lahore / Karachi" class="form-input">
+                                <label class="form-label">Sort Order *</label>
+                                <input type="number" id="u-sort" required value="${uni.sort_order || 0}" class="form-input">
                             </div>
                             <div>
-                                <label class="form-label">Official Website URL</label>
-                                <input type="url" id="u-url" value="${uni.official_website || ''}" placeholder="https://nu.edu.pk" class="form-input">
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="form-label">Logo Image URL</label>
-                                <input type="url" id="u-logo" value="${uni.logo_url || ''}" placeholder="https://..." class="form-input">
+                                <label class="form-label">Logo File ID</label>
+                                <input type="text" id="u-logo" value="${uni.logo_file_id || ''}" placeholder="Appwrite file ID" class="form-input">
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="form-label">Description / Admission Guidelines</label>
-                                <textarea id="u-desc" rows="3" class="form-input" placeholder="Overview of admission criteria, test structure, and campuses...">${uni.description || ''}</textarea>
+                                <textarea id="u-desc" rows="3" class="form-input" placeholder="Overview of admission criteria...">${uni.description || ''}</textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="form-label">Tests (JSON String) *</label>
+                                <textarea id="u-tests" rows="2" required class="form-input" placeholder="[]">${uni.tests || '[]'}</textarea>
                             </div>
                             <div class="sm:col-span-2 pt-2 flex items-center gap-2">
                                 <input type="checkbox" id="u-active" class="w-4 h-4 text-sky-600 rounded" ${uni.active !== false ? 'checked' : ''}>
-                                <label for="u-active" class="text-xs font-bold text-slate-700">Display as Active University on Student Dashboard</label>
+                                <label for="u-active" class="text-xs font-bold text-slate-700">Display as Active University</label>
                             </div>
                         </div>
 
@@ -224,19 +224,25 @@ export const universitiesController = {
             btn.textContent = 'Saving...';
 
             try {
+                const now = new Date().toISOString();
                 const payload = {
                     name: document.getElementById('u-name').value.trim(),
                     short_name: document.getElementById('u-short').value.trim(),
                     slug: document.getElementById('u-slug').value.trim().toLowerCase(),
+                    sort_order: parseInt(document.getElementById('u-sort').value) || 0,
+                    logo_file_id: document.getElementById('u-logo').value.trim(),
                     description: document.getElementById('u-desc').value.trim(),
+                    tests: document.getElementById('u-tests').value.trim(),
                     active: document.getElementById('u-active').checked,
-                    is_active: document.getElementById('u-active').checked
+                    is_active: document.getElementById('u-active').checked,
+                    updated_at: now
                 };
 
                 if (isEdit) {
                     await databases.updateDocument(CONFIG.databaseId, CONFIG.universitiesCol, id, payload);
                     showToast("University updated successfully", "success");
                 } else {
+                    payload.created_at = now;
                     const docId = payload.slug || ID.unique();
                     await databases.createDocument(CONFIG.databaseId, CONFIG.universitiesCol, docId, payload);
                     showToast("University created successfully", "success");

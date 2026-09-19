@@ -17,6 +17,7 @@ import { mockTestsController } from './controllers/mockTestsController.js';
 import { attemptsController } from './controllers/attemptsController.js';
 import { validatorController } from './controllers/validatorController.js';
 import { sessionsController } from './controllers/sessionsController.js';
+import { masteryTopicsController } from './controllers/masteryTopicsController.js';
 
 class App {
     constructor() {
@@ -28,6 +29,8 @@ class App {
             'sessions': sessionsController,
             'user-sessions': sessionsController,
             'mock-tests': mockTestsController,
+            'mastery-topics': masteryTopicsController,
+            'sections': masteryTopicsController,
             'past-papers': pastPapersController,
             'universities': universitiesController,
             'users': usersController,
@@ -225,6 +228,8 @@ class App {
                 'sessions': 'User Sessions & Logins Telemetry',
                 'user-sessions': 'User Sessions & Logins Telemetry',
                 'mock-tests': 'Mock Test Builder & 3-File Manager',
+                'mastery-topics': 'Topic Mastery Tests & Academic Sections',
+                'sections': 'Academic Sections Manager',
                 'past-papers': 'Past Papers & Digital Drive',
                 'universities': 'Universities & Pattern Blueprint Editor',
                 'users': 'Student & User Directory',

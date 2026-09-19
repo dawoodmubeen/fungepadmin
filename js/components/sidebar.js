@@ -48,6 +48,13 @@ export function renderSidebar(adminDoc) {
                         </div>
                         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">3-File</span>
                     </a>
+                    <a href="#mastery-topics" class="nav-link group flex items-center justify-between px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-600 hover:text-sky-700 hover:bg-sky-50/70 transition-colors" data-target="mastery-topics">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="target" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors flex-shrink-0"></i>
+                            <span>Mastery Topics</span>
+                        </div>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800">JSON</span>
+                    </a>
                     <a href="#past-papers" class="nav-link group flex items-center gap-3 px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-600 hover:text-sky-700 hover:bg-sky-50/70 transition-colors" data-target="past-papers">
                         <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors flex-shrink-0"></i>
                         <span>Past Papers & Drive</span>

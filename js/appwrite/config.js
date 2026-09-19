@@ -20,11 +20,13 @@ const CONFIG = {
   feedbackCol: 'feedback',
   notificationsCol: 'notifications',
   userSessionsCol: 'user_sessions',
+  masteryTopicsCol: 'mastery_topics',
+  sectionsCol: 'sections',
   
   // Compatibility aliases
   reviewsCol: 'feedback', // Reviews are handled under feedback with category='review'
   
-  // 7 Storage Buckets
+  // Storage Buckets
   profileImagesBucket: 'profile-images',
   paymentReceiptsBucket: 'payment-receipts',
   mockJsonsBucket: 'mock-jsons',
@@ -32,6 +34,7 @@ const CONFIG = {
   solutionsBucket: 'solutions',
   pastPapersBucket: 'past-papers',
   supportAttachmentsBucket: 'support-attachments',
+  masteryJsonsBucket: 'mastery_jsons',
 
   // Functions
   premiumOpsFunctionId: '6a941f71001c52d43dbd'

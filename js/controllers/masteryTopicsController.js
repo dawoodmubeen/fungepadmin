@@ -6,6 +6,7 @@ export const masteryTopicsController = {
     currentTab: 'topics', // 'topics' | 'sections'
     sections: [],
     topics: [],
+    currentSectionChapters: [],
 
     async render(container, args) {
         if (args && args.length > 0 && args[0] === 'sections') {
@@ -23,7 +24,7 @@ export const masteryTopicsController = {
                             <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Mastery Topics & Sections</h1>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">Topic-Wise Engine</span>
                         </div>
-                        <p class="text-xs sm:text-sm text-slate-500 mt-1">Organize tests by academic sections and upload topic mastery JSON files.</p>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">Organize tests by academic sections & chapters, and upload topic mastery JSON files.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <button id="add-section-top-btn" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition flex items-center gap-2">
@@ -46,7 +47,7 @@ export const masteryTopicsController = {
                     </button>
                     <button id="tab-btn-sections" class="tab-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${this.currentTab === 'sections' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/80' : 'text-slate-500 hover:text-slate-800'}">
                         <i data-lucide="folder" class="w-4 h-4"></i>
-                        <span>Academic Sections</span>
+                        <span>Academic Sections & Chapters</span>
                         <span id="badge-sections-count" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-extrabold">0</span>
                     </button>
                 </div>
@@ -57,7 +58,7 @@ export const masteryTopicsController = {
                     <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
                         <div class="relative flex-1 w-full md:max-w-md">
                             <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                            <input type="text" id="search-topics" placeholder="Search topic tests by title or section..." class="form-input pl-10 text-xs sm:text-sm">
+                            <input type="text" id="search-topics" placeholder="Search topic tests by title, chapter, section..." class="form-input pl-10 text-xs sm:text-sm">
                         </div>
                         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                             <select id="filter-topic-section" class="form-input text-xs sm:text-sm py-2">
@@ -91,7 +92,7 @@ export const masteryTopicsController = {
                     <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
                         <div class="relative flex-1 max-w-md">
                             <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                            <input type="text" id="search-sections" placeholder="Search sections by name or ID..." class="form-input pl-10 text-xs sm:text-sm">
+                            <input type="text" id="search-sections" placeholder="Search sections by name, chapter, or ID..." class="form-input pl-10 text-xs sm:text-sm">
                         </div>
                         <button id="add-section-inner-btn" class="btn-primary text-xs sm:text-sm">
                             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -118,7 +119,7 @@ export const masteryTopicsController = {
                             </div>
                             <div>
                                 <h2 class="text-lg font-bold text-slate-900">Upload Topic Mastery Test</h2>
-                                <p class="text-xs text-slate-500">Upload JSON question bank and assign to an academic section</p>
+                                <p class="text-xs text-slate-500">Upload JSON question bank and assign to section & chapter</p>
                             </div>
                         </div>
                         <button class="modal-close-btn p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
@@ -128,25 +129,39 @@ export const masteryTopicsController = {
 
                     <div class="p-6 overflow-y-auto flex-1">
                         <form id="upload-topic-form" class="space-y-4">
-                            <!-- Section Selector with Quick Add Button -->
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="form-label mb-0">Academic Section *</label>
-                                    <button type="button" id="quick-add-section-btn" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">
-                                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                                        <span>Create New Section</span>
-                                    </button>
+                            <!-- Section & Chapter Selectors -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="form-label mb-0">Academic Section *</label>
+                                        <button type="button" id="quick-add-section-btn" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">
+                                            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                            <span>New Section</span>
+                                        </button>
+                                    </div>
+                                    <select id="c-topic-section" required class="form-input">
+                                        <option value="">-- Select Section --</option>
+                                    </select>
+                                    <p class="text-[11px] text-slate-400 mt-1">Select section to load its chapters.</p>
                                 </div>
-                                <select id="c-topic-section" required class="form-input">
-                                    <option value="">-- Select Section --</option>
-                                </select>
-                                <p class="text-[11px] text-slate-400 mt-1">Select the academic section this mastery topic belongs to.</p>
+
+                                <div>
+                                    <label class="form-label">Chapter Name (Optional)</label>
+                                    <div class="space-y-1.5">
+                                        <select id="c-topic-chapter-select" class="form-input">
+                                            <option value="">-- Select Chapter --</option>
+                                            <option value="__custom__">+ Enter Custom Chapter</option>
+                                        </select>
+                                        <input type="text" id="c-topic-chapter-custom" placeholder="Type chapter name..." class="form-input hidden">
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">Select chapter or type custom name.</p>
+                                </div>
                             </div>
 
                             <!-- Topic Title -->
                             <div>
                                 <label class="form-label">Topic Title *</label>
-                                <input type="text" id="c-topic-title" required maxlength="200" placeholder="e.g. Algebra & Functions - Level 1" class="form-input">
+                                <input type="text" id="c-topic-title" required maxlength="200" placeholder="e.g. Matrices & Determinants - Practice Mock 1" class="form-input">
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -284,11 +299,24 @@ export const masteryTopicsController = {
                             <input type="text" id="e-topic-title" required maxlength="200" class="form-input">
                         </div>
 
-                        <div>
-                            <label class="form-label">Academic Section *</label>
-                            <select id="e-topic-section" required class="form-input">
-                                <option value="">-- Select Section --</option>
-                            </select>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">Academic Section *</label>
+                                <select id="e-topic-section" required class="form-input">
+                                    <option value="">-- Select Section --</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label">Chapter Name (Optional)</label>
+                                <div class="space-y-1.5">
+                                    <select id="e-topic-chapter-select" class="form-input">
+                                        <option value="">-- Select Chapter --</option>
+                                        <option value="__custom__">+ Enter Custom Chapter</option>
+                                    </select>
+                                    <input type="text" id="e-topic-chapter-custom" placeholder="Type chapter name..." class="form-input hidden">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -321,7 +349,7 @@ export const masteryTopicsController = {
 
             <!-- Add / Edit Section Modal -->
             <div id="section-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden modal-overlay">
-                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md modal-content overflow-hidden border border-slate-100">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content overflow-hidden border border-slate-100">
                     <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <div class="flex items-center gap-2">
                             <div class="p-2 rounded-xl bg-sky-100 text-sky-700">
@@ -341,6 +369,28 @@ export const masteryTopicsController = {
                             <label class="form-label">Section Name *</label>
                             <input type="text" id="sec-name" required maxlength="150" placeholder="e.g. Mathematics, English, Analytical Reasoning" class="form-input">
                             <span class="text-[11px] text-slate-400 mt-1 block">Maximum 150 characters.</span>
+                        </div>
+
+                        <!-- Chapters Management -->
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <label class="form-label mb-0">Chapters (String Array)</label>
+                                <span class="text-[11px] text-slate-400">Press Enter or Add to save chapter</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Define the chapters belonging to this section (e.g. Matrices, Trigonometry, Vectors).</p>
+                            
+                            <div class="flex gap-2">
+                                <input type="text" id="sec-new-chapter" placeholder="Enter chapter name..." class="form-input text-xs flex-1">
+                                <button type="button" id="sec-btn-add-chapter" class="px-3.5 py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span>Add</span>
+                                </button>
+                            </div>
+
+                            <!-- Chips list -->
+                            <div id="sec-chapters-container" class="flex flex-wrap gap-1.5 min-h-[44px] p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <span class="text-[11px] text-slate-400 italic">No chapters added yet.</span>
+                            </div>
                         </div>
 
                         <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -425,6 +475,17 @@ export const masteryTopicsController = {
                 statusBox.classList.add('hidden');
                 statusBox.innerHTML = '';
             }
+            const secSelect = document.getElementById('c-topic-section');
+            const chSelect = document.getElementById('c-topic-chapter-select');
+            const chCustom = document.getElementById('c-topic-chapter-custom');
+            if (secSelect) secSelect.value = '';
+            if (chSelect) {
+                chSelect.innerHTML = '<option value="">-- Select Chapter --</option><option value="__custom__">+ Enter Custom Chapter</option>';
+            }
+            if (chCustom) {
+                chCustom.value = '';
+                chCustom.classList.add('hidden');
+            }
             openModal(uploadModal);
         });
 
@@ -434,12 +495,78 @@ export const masteryTopicsController = {
             document.getElementById('sec-id').value = '';
             document.getElementById('section-modal-title').textContent = 'Add Academic Section';
             document.getElementById('sec-submit-text').textContent = 'Create Section';
+            this.currentSectionChapters = [];
+            this.renderSectionChapters();
             openModal(sectionModal);
         };
         document.getElementById('add-section-top-btn')?.addEventListener('click', openAddSection);
         document.getElementById('add-section-inner-btn')?.addEventListener('click', openAddSection);
         document.getElementById('quick-add-section-btn')?.addEventListener('click', () => {
             openAddSection();
+        });
+
+        // Chapter management inside Section modal
+        const addChapterInput = document.getElementById('sec-new-chapter');
+        const addChapterBtn = document.getElementById('sec-btn-add-chapter');
+
+        const addChapterFromInput = () => {
+            const val = (addChapterInput?.value || '').trim();
+            if (val) {
+                if (!this.currentSectionChapters.includes(val)) {
+                    this.currentSectionChapters.push(val);
+                    this.renderSectionChapters();
+                } else {
+                    showToast("Chapter already exists in this section", "info");
+                }
+                addChapterInput.value = '';
+                addChapterInput.focus();
+            }
+        };
+
+        addChapterBtn?.addEventListener('click', addChapterFromInput);
+        addChapterInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addChapterFromInput();
+            }
+        });
+
+        // Dynamic chapter dropdown updates when Section changes in Upload Modal
+        const cSectionSelect = document.getElementById('c-topic-section');
+        const cChapterSelect = document.getElementById('c-topic-chapter-select');
+        const cChapterCustom = document.getElementById('c-topic-chapter-custom');
+
+        cSectionSelect?.addEventListener('change', () => {
+            this.syncChapterDropdown(cSectionSelect.value, cChapterSelect, cChapterCustom, '');
+        });
+
+        cChapterSelect?.addEventListener('change', () => {
+            if (cChapterSelect.value === '__custom__') {
+                cChapterCustom?.classList.remove('hidden');
+                cChapterCustom?.focus();
+            } else {
+                cChapterCustom?.classList.add('hidden');
+                if (cChapterCustom) cChapterCustom.value = '';
+            }
+        });
+
+        // Dynamic chapter dropdown updates when Section changes in Edit Modal
+        const eSectionSelect = document.getElementById('e-topic-section');
+        const eChapterSelect = document.getElementById('e-topic-chapter-select');
+        const eChapterCustom = document.getElementById('e-topic-chapter-custom');
+
+        eSectionSelect?.addEventListener('change', () => {
+            this.syncChapterDropdown(eSectionSelect.value, eChapterSelect, eChapterCustom, '');
+        });
+
+        eChapterSelect?.addEventListener('change', () => {
+            if (eChapterSelect.value === '__custom__') {
+                eChapterCustom?.classList.remove('hidden');
+                eChapterCustom?.focus();
+            } else {
+                eChapterCustom?.classList.add('hidden');
+                if (eChapterCustom) eChapterCustom.value = '';
+            }
         });
 
         // File input auto-parsing for upload topic modal
@@ -546,8 +673,11 @@ export const masteryTopicsController = {
 
             const filtered = (this.topics || []).filter(topic => {
                 const secName = (sectionMap[topic.section_id] || '').toLowerCase();
+                const chName = (topic.chapter || '').toLowerCase();
+
                 const matchQ = !q ||
                     (topic.title || '').toLowerCase().includes(q) ||
+                    chName.includes(q) ||
                     secName.includes(q) ||
                     (topic.$id || '').toLowerCase().includes(q) ||
                     (topic.file_id || '').toLowerCase().includes(q);
@@ -571,12 +701,79 @@ export const masteryTopicsController = {
         const searchSections = document.getElementById('search-sections');
         searchSections?.addEventListener('input', debounce((e) => {
             const q = (e.target.value || '').trim().toLowerCase();
-            const filtered = (this.sections || []).filter(sec =>
-                (sec.name || '').toLowerCase().includes(q) ||
-                (sec.$id || '').toLowerCase().includes(q)
-            );
+            const filtered = (this.sections || []).filter(sec => {
+                const nameMatch = (sec.name || '').toLowerCase().includes(q);
+                const idMatch = (sec.$id || '').toLowerCase().includes(q);
+                const chMatch = Array.isArray(sec.chapters) && sec.chapters.some(c => (c || '').toLowerCase().includes(q));
+                return nameMatch || idMatch || chMatch;
+            });
             this.renderSectionsCards(filtered);
         }, 200));
+    },
+
+    renderSectionChapters() {
+        const container = document.getElementById('sec-chapters-container');
+        if (!container) return;
+
+        if (!this.currentSectionChapters || this.currentSectionChapters.length === 0) {
+            container.innerHTML = `<span class="text-[11px] text-slate-400 italic">No chapters added yet. Enter name above and click Add or press Enter.</span>`;
+            return;
+        }
+
+        container.innerHTML = this.currentSectionChapters.map((ch, idx) => `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs text-slate-800 font-semibold shadow-2xs">
+                <span>${ch}</span>
+                <button type="button" class="btn-del-chapter text-slate-400 hover:text-rose-600 transition" data-idx="${idx}">
+                    <i data-lucide="x" class="w-3 h-3"></i>
+                </button>
+            </span>
+        `).join('');
+
+        if (window.lucide) window.lucide.createIcons();
+
+        container.querySelectorAll('.btn-del-chapter').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.idx);
+                this.currentSectionChapters.splice(idx, 1);
+                this.renderSectionChapters();
+            });
+        });
+    },
+
+    syncChapterDropdown(sectionId, selectEl, customInputEl, currentChapter = '') {
+        if (!selectEl) return;
+
+        const sec = (this.sections || []).find(s => s.$id === sectionId);
+        const chapters = sec && Array.isArray(sec.chapters) ? sec.chapters : [];
+
+        selectEl.innerHTML = '<option value="">-- Select Chapter (Optional) --</option>';
+        chapters.forEach(ch => {
+            const opt = document.createElement('option');
+            opt.value = ch;
+            opt.textContent = ch;
+            selectEl.appendChild(opt);
+        });
+
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '+ Enter Custom Chapter';
+        selectEl.appendChild(customOpt);
+
+        if (currentChapter) {
+            if (chapters.includes(currentChapter)) {
+                selectEl.value = currentChapter;
+                customInputEl?.classList.add('hidden');
+                if (customInputEl) customInputEl.value = '';
+            } else {
+                selectEl.value = '__custom__';
+                customInputEl?.classList.remove('hidden');
+                if (customInputEl) customInputEl.value = currentChapter;
+            }
+        } else {
+            selectEl.value = '';
+            customInputEl?.classList.add('hidden');
+            if (customInputEl) customInputEl.value = '';
+        }
     },
 
     async loadInitialData() {
@@ -715,7 +912,7 @@ export const masteryTopicsController = {
                     <thead class="table-header">
                         <tr>
                             <th>Topic Title</th>
-                            <th>Section</th>
+                            <th>Section & Chapter</th>
                             <th>Questions</th>
                             <th>Access & Status</th>
                             <th>JSON File</th>
@@ -758,13 +955,21 @@ export const masteryTopicsController = {
                         </div>
                     </td>
 
-                    <!-- Section Name -->
+                    <!-- Section & Chapter -->
                     <td class="table-cell">
                         <div class="flex items-center gap-1.5">
                             <i data-lucide="folder" class="w-3.5 h-3.5 text-sky-600"></i>
                             <span class="font-semibold text-xs text-slate-800">${sectionName}</span>
                         </div>
-                        <span class="text-[10px] text-slate-400 font-mono">Sec ID: ${topic.section_id || 'None'}</span>
+                        ${topic.chapter ? `
+                            <div class="flex items-center gap-1 mt-1">
+                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/60 inline-flex items-center gap-1">
+                                    <i data-lucide="bookmark" class="w-3 h-3 text-sky-600"></i>
+                                    <span>${topic.chapter}</span>
+                                </span>
+                            </div>
+                        ` : ''}
+                        <span class="text-[10px] text-slate-400 font-mono block mt-0.5">Sec ID: ${topic.section_id || 'None'}</span>
                     </td>
 
                     <!-- Total Questions -->
@@ -815,6 +1020,7 @@ export const masteryTopicsController = {
                                 data-id="${topic.$id}"
                                 data-title="${topic.title || ''}"
                                 data-section="${topic.section_id || ''}"
+                                data-chapter="${topic.chapter || ''}"
                                 data-questions="${topic.total_questions || 0}"
                                 data-premium="${topic.is_premium}"
                                 data-status="${topic.status || 'published'}"
@@ -835,6 +1041,7 @@ export const masteryTopicsController = {
                                 data-id="${topic.$id}"
                                 data-title="${topic.title || ''}"
                                 data-file="${topic.file_id || ''}"
+                                data-chapter="${topic.chapter || ''}"
                                 title="Delete Topic Test">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
@@ -887,12 +1094,19 @@ export const masteryTopicsController = {
         container.querySelectorAll('.btn-edit-topic').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const b = e.currentTarget;
+                const secId = b.dataset.section;
+                const ch = b.dataset.chapter || '';
+
                 document.getElementById('e-topic-id').value = b.dataset.id;
                 document.getElementById('e-topic-title').value = b.dataset.title;
-                document.getElementById('e-topic-section').value = b.dataset.section;
+                document.getElementById('e-topic-section').value = secId;
                 document.getElementById('e-topic-questions').value = b.dataset.questions;
                 document.getElementById('e-topic-premium').checked = b.dataset.premium === 'true';
                 document.getElementById('e-topic-status').value = b.dataset.status;
+
+                const eChapterSelect = document.getElementById('e-topic-chapter-select');
+                const eChapterCustom = document.getElementById('e-topic-chapter-custom');
+                this.syncChapterDropdown(secId, eChapterSelect, eChapterCustom, ch);
 
                 const modal = document.getElementById('edit-topic-modal');
                 modal?.classList.remove('hidden');
@@ -961,7 +1175,7 @@ export const masteryTopicsController = {
                 <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400 border border-slate-200/80">
                     <i data-lucide="folder-plus" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
                     <p class="text-sm font-bold text-slate-700">No academic sections created yet</p>
-                    <p class="text-xs text-slate-400 mt-0.5">Create sections (e.g. Mathematics, English, Analytical) to categorize topic tests.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Create sections (e.g. Mathematics, English, Analytical) and chapters to categorize topic tests.</p>
                 </div>
             `;
             if (window.lucide) window.lucide.createIcons();
@@ -978,6 +1192,8 @@ export const masteryTopicsController = {
 
         container.innerHTML = sections.map(sec => {
             const count = topicCounts[sec.$id] || 0;
+            const chapters = Array.isArray(sec.chapters) ? sec.chapters : [];
+
             return `
                 <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between">
                     <div>
@@ -991,7 +1207,27 @@ export const masteryTopicsController = {
                         </div>
 
                         <h3 class="text-base font-extrabold text-slate-900">${sec.name}</h3>
-                        <p class="text-[11px] font-mono text-slate-400 mt-1">ID: ${sec.$id}</p>
+                        <p class="text-[11px] font-mono text-slate-400 mt-0.5">ID: ${sec.$id}</p>
+
+                        <!-- Chapters preview -->
+                        ${chapters.length > 0 ? `
+                            <div class="mt-3 pt-3 border-t border-slate-100">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1.5">
+                                    Chapters (${chapters.length})
+                                </span>
+                                <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                                    ${chapters.map(ch => `
+                                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/60">
+                                            ${ch}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="mt-3 pt-3 border-t border-slate-100">
+                                <span class="text-[11px] text-slate-400 italic">No chapters configured</span>
+                            </div>
+                        `}
                     </div>
 
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -1002,8 +1238,7 @@ export const masteryTopicsController = {
                         <div class="flex items-center gap-1">
                             <button class="btn-edit-sec p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-slate-100 transition"
                                 data-id="${sec.$id}"
-                                data-name="${sec.name}"
-                                title="Rename Section">
+                                title="Edit Section & Chapters">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>
                             <button class="btn-delete-sec p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
@@ -1037,14 +1272,20 @@ export const masteryTopicsController = {
             });
         });
 
-        // 2. Edit Section Name
+        // 2. Edit Section & Chapters
         container.querySelectorAll('.btn-edit-sec').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const b = e.currentTarget;
-                document.getElementById('sec-id').value = b.dataset.id;
-                document.getElementById('sec-name').value = b.dataset.name;
-                document.getElementById('section-modal-title').textContent = 'Edit Academic Section';
+                const id = e.currentTarget.dataset.id;
+                const sec = (this.sections || []).find(s => s.$id === id);
+                if (!sec) return;
+
+                document.getElementById('sec-id').value = sec.$id;
+                document.getElementById('sec-name').value = sec.name || '';
+                document.getElementById('section-modal-title').textContent = 'Edit Academic Section & Chapters';
                 document.getElementById('sec-submit-text').textContent = 'Save Changes';
+
+                this.currentSectionChapters = Array.isArray(sec.chapters) ? [...sec.chapters] : [];
+                this.renderSectionChapters();
 
                 const modal = document.getElementById('section-modal');
                 modal?.classList.remove('hidden');
@@ -1095,6 +1336,16 @@ export const masteryTopicsController = {
             const isPremium = document.querySelector('input[name="c-topic-access"]:checked').value === 'premium';
             const fileInput = document.getElementById('c-topic-file');
 
+            // Chapter resolution
+            const chapterSelect = document.getElementById('c-topic-chapter-select');
+            const chapterCustom = document.getElementById('c-topic-chapter-custom');
+            let chapter = '';
+            if (chapterSelect) {
+                chapter = chapterSelect.value === '__custom__'
+                    ? (chapterCustom?.value || '').trim()
+                    : chapterSelect.value.trim();
+            }
+
             if (!sectionId) throw new Error("Please select an academic section.");
             if (!title) throw new Error("Please provide a topic title.");
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -1113,6 +1364,7 @@ export const masteryTopicsController = {
             await databases.createDocument(CONFIG.databaseId, CONFIG.masteryTopicsCol, ID.unique(), {
                 title: title,
                 section_id: sectionId,
+                chapter: chapter,
                 file_id: fileId,
                 total_questions: totalQuestions,
                 is_premium: isPremium,
@@ -1209,12 +1461,23 @@ export const masteryTopicsController = {
             const isPremium = document.getElementById('e-topic-premium').checked;
             const status = document.getElementById('e-topic-status').value;
 
+            // Chapter resolution
+            const chapterSelect = document.getElementById('e-topic-chapter-select');
+            const chapterCustom = document.getElementById('e-topic-chapter-custom');
+            let chapter = '';
+            if (chapterSelect) {
+                chapter = chapterSelect.value === '__custom__'
+                    ? (chapterCustom?.value || '').trim()
+                    : chapterSelect.value.trim();
+            }
+
             if (!title) throw new Error("Title is required.");
             if (!sectionId) throw new Error("Academic section is required.");
 
             await databases.updateDocument(CONFIG.databaseId, CONFIG.masteryTopicsCol, topicId, {
                 title: title,
                 section_id: sectionId,
+                chapter: chapter,
                 total_questions: totalQuestions,
                 is_premium: isPremium,
                 status: status
@@ -1246,19 +1509,22 @@ export const masteryTopicsController = {
         try {
             const id = document.getElementById('sec-id').value;
             const name = document.getElementById('sec-name').value.trim();
+            const chapters = [...(this.currentSectionChapters || [])];
 
             if (!name) throw new Error("Section name is required.");
 
             if (id) {
                 // Update
                 await databases.updateDocument(CONFIG.databaseId, CONFIG.sectionsCol, id, {
-                    name: name
+                    name: name,
+                    chapters: chapters
                 });
                 showToast("Section updated successfully!", "success");
             } else {
                 // Create
                 await databases.createDocument(CONFIG.databaseId, CONFIG.sectionsCol, ID.unique(), {
-                    name: name
+                    name: name,
+                    chapters: chapters
                 });
                 showToast("Section created successfully!", "success");
             }

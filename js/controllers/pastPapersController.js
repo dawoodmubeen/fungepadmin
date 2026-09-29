@@ -336,7 +336,7 @@ export const pastPapersController = {
 
     async renderForm(container, id) {
         let paper = { 
-            title: '', university_id: '', university_name: '', test_name: '', 
+            title: '', university_id: '', university_name: '', test_name: '', test_id: '',
             year: new Date().getFullYear(), subject: '', is_premium: false, status: 'published', file_id: '' 
         };
         let isEdit = false;
@@ -386,6 +386,10 @@ export const pastPapersController = {
                                     <option value="">Select University</option>
                                     ${universities.map(u => `<option value="${u.$id}" data-name="${u.name || u.short_name}" ${paper.university_id === u.$id ? 'selected' : ''}>${u.name || u.short_name}</option>`).join('')}
                                 </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Test ID (Slug) *</label>
+                                <input type="text" id="p-test-id" required value="${paper.test_id || ''}" placeholder="e.g. net-2024" class="form-input">
                             </div>
                             <div>
                                 <label class="form-label">Test Name</label>
@@ -456,6 +460,7 @@ export const pastPapersController = {
                     title: document.getElementById('p-title').value.trim(),
                     university_id: uniSelect.value,
                     university_name: uniName,
+                    test_id: document.getElementById('p-test-id').value.trim(),
                     test_name: document.getElementById('p-test').value.trim(),
                     year: parseInt(document.getElementById('p-year').value) || 2024,
                     subject: document.getElementById('p-subject').value.trim(),

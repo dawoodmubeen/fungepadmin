@@ -1648,7 +1648,7 @@ export const masteryTopicsController = {
         this.currentEditJsonTopicId = topicId;
         
         try {
-            const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.masteryTopicsBucket}/files/${fileId}/download?project=${CONFIG.projectId}`;
+            const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.masteryJsonsBucket}/files/${fileId}/download?project=${CONFIG.projectId}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch JSON file.');
             const data = await res.json();
@@ -1686,13 +1686,13 @@ export const masteryTopicsController = {
             
             // Delete old file from bucket
             try {
-                await storage.deleteFile(CONFIG.masteryTopicsBucket, this.currentEditJsonFileId);
+                await storage.deleteFile(CONFIG.masteryJsonsBucket, this.currentEditJsonFileId);
             } catch (delErr) {
                 console.warn('Old file deletion failed (might not exist):', delErr);
             }
             
             // Upload new file
-            const uploadRes = await storage.createFile(CONFIG.masteryTopicsBucket, ID.unique(), fileObj);
+            const uploadRes = await storage.createFile(CONFIG.masteryJsonsBucket, ID.unique(), fileObj);
             
             // Update topic document with new file_id and total_questions
             await databases.updateDocument(CONFIG.databaseId, CONFIG.masteryTopicsCol, this.currentEditJsonTopicId, {

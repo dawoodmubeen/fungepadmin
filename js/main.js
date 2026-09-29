@@ -16,7 +16,6 @@ import { subscriptionsController } from './controllers/subscriptionsController.j
 import { mockTestsController } from './controllers/mockTestsController.js';
 import { attemptsController } from './controllers/attemptsController.js';
 import { validatorController } from './controllers/validatorController.js';
-import { sessionsController } from './controllers/sessionsController.js';
 import { masteryTopicsController } from './controllers/masteryTopicsController.js';
 
 class App {
@@ -26,8 +25,6 @@ class App {
         this.controllers = {
             'dashboard': dashboardController,
             'attempts': attemptsController,
-            'sessions': sessionsController,
-            'user-sessions': sessionsController,
             'mock-tests': mockTestsController,
             'mastery-topics': masteryTopicsController,
             'sections': masteryTopicsController,
@@ -225,8 +222,6 @@ class App {
             const titleMap = {
                 'dashboard': 'Executive KPI Dashboard',
                 'attempts': 'Live Exam Telemetry & Sessions',
-                'sessions': 'User Sessions & Logins Telemetry',
-                'user-sessions': 'User Sessions & Logins Telemetry',
                 'mock-tests': 'Mock Test Builder & 3-File Manager',
                 'mastery-topics': 'Topic Mastery Tests & Academic Sections',
                 'sections': 'Academic Sections Manager',

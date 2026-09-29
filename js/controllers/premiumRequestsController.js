@@ -26,12 +26,12 @@ export const premiumRequestsController = {
                 </div>
 
                 <!-- Filters & Order Queue -->
-                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div class="relative flex-1 w-full md:max-w-md">
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <div class="relative w-full">
                         <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
                         <input type="text" id="search-orders" placeholder="Search by student, email, Order ID, or TID..." class="form-input pl-10 text-xs sm:text-sm">
                     </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="w-full">
                         <select id="filter-order-status" class="form-input text-xs sm:text-sm py-2">
                             <option value="pending" selected>Pending Verification Only</option>
                             <option value="all">All Orders</option>

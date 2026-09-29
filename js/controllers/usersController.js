@@ -29,14 +29,14 @@ export const usersController = {
                 </div>
 
                 <!-- Toolbar -->
-                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div class="relative flex-1 w-full md:max-w-md">
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    <div class="relative md:col-span-6 lg:col-span-7">
                         <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
                         <input type="text" id="search-user" 
-                            placeholder="Search across all pages by name, email, target uni, auth ID..." 
+                            placeholder="Search by name, email, target uni, auth ID..." 
                             class="form-input pl-10 text-xs sm:text-sm">
                     </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="grid grid-cols-2 gap-3 md:col-span-6 lg:col-span-5">
                         <select id="filter-premium" class="form-input text-xs sm:text-sm py-2">
                             <option value="all">All Plans</option>
                             <option value="premium">Premium Only 👑</option>
@@ -45,7 +45,7 @@ export const usersController = {
                         <select id="filter-status" class="form-input text-xs sm:text-sm py-2">
                             <option value="all">All Statuses</option>
                             <option value="active">Active</option>
-                            <option value="banned">Banned / Suspended</option>
+                            <option value="banned">Banned</option>
                         </select>
                     </div>
                 </div>
@@ -280,9 +280,7 @@ export const usersController = {
                     <!-- Actions -->
                     <td class="table-cell text-right">
                         <div class="flex items-center justify-end gap-1.5">
-                            <a href="#sessions/user/${authId}" class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition" title="View Student Sessions & Logins">
-                                <i data-lucide="shield-check" class="w-4 h-4"></i>
-                            </a>
+
                             <a href="#users/view/${authId}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition flex items-center gap-1">
                                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                                 <span>Inspect</span>
@@ -372,8 +370,8 @@ export const usersController = {
 
             const authId = user.auth_id || user.$id;
 
-            // Fetch linked attempts, premium orders, subscriptions, and sessions concurrently
-            const [attemptsRes, ordersRes, subsRes, sessionsRes] = await Promise.all([
+            // Fetch linked attempts, premium orders, and subscriptions concurrently
+            const [attemptsRes, ordersRes, subsRes] = await Promise.all([
                 databases.listDocuments(CONFIG.databaseId, CONFIG.testAttemptsCol, [
                     Query.equal('user_id', authId),
                     Query.orderDesc('started_at'),
@@ -388,19 +386,12 @@ export const usersController = {
                     Query.equal('user_id', authId),
                     Query.orderDesc('$createdAt'),
                     Query.limit(5)
-                ]).catch(() => ({ documents: [] })),
-                databases.listDocuments(CONFIG.databaseId, CONFIG.userSessionsCol, [
-                    Query.equal('userId', authId),
-                    Query.orderDesc('loginAt'),
-                    Query.limit(10)
                 ]).catch(() => ({ documents: [] }))
             ]);
 
             const avatarUrl = user.profile_photo 
                 ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.profileImagesBucket}/files/${user.profile_photo}/view?project=${CONFIG.projectId}`
                 : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Student')}&background=0284c7&color=fff&bold=true`;
-
-            const sessionsList = sessionsRes.documents || [];
 
             container.innerHTML = `
                 <div class="space-y-6">
@@ -410,10 +401,6 @@ export const usersController = {
                             <span>Back to Student Directory</span>
                         </a>
                         <div class="flex items-center gap-2">
-                            <a href="#sessions/user/${authId}" class="btn-secondary text-xs flex items-center gap-1.5">
-                                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-sky-600"></i>
-                                <span>All User Sessions (${sessionsList.length})</span>
-                            </a>
                             <span class="badge ${user.is_premium ? 'badge-warning' : 'badge-gray'} text-xs">
                                 ${user.is_premium ? '👑 Active Premium Member' : 'Free Tier Student'}
                             </span>
@@ -466,68 +453,6 @@ export const usersController = {
 
                         <!-- Main Activity & Examination Telemetry (Cols 2-3) -->
                         <div class="lg:col-span-2 space-y-6">
-                            <!-- Recent User Sessions & Logins -->
-                            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
-                                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
-                                        <span>Recent Login Sessions & Telemetry (${sessionsList.length})</span>
-                                    </h3>
-                                    <a href="#sessions/user/${authId}" class="text-xs font-bold text-sky-600 hover:underline">View All Sessions</a>
-                                </div>
-                                <div class="p-0">
-                                    ${sessionsList.length === 0 ? `
-                                        <div class="p-8 text-center text-slate-400 text-xs font-semibold">No recent session logs recorded for this student.</div>
-                                    ` : `
-                                        <div class="table-responsive-wrapper">
-                                            <table class="min-w-full divide-y divide-slate-100 text-xs">
-                                                <thead class="table-header">
-                                                    <tr>
-                                                        <th>Device & Browser</th>
-                                                        <th>IP & Location</th>
-                                                        <th>Login Time</th>
-                                                        <th>Duration</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="divide-y divide-slate-100">
-                                                    ${sessionsList.map(s => {
-                                                        const devIcon = (s.deviceType || '').toLowerCase() === 'mobile' ? 'smartphone' : 'monitor';
-                                                        return `
-                                                            <tr class="table-row">
-                                                                <td class="table-cell">
-                                                                    <div class="flex items-center gap-2">
-                                                                        <i data-lucide="${devIcon}" class="w-3.5 h-3.5 text-sky-600"></i>
-                                                                        <span class="font-bold text-slate-800">${s.deviceType || 'Desktop'}</span>
-                                                                        <span class="text-slate-400 font-normal">(${s.browser || 'Browser'}, ${s.os || 'OS'})</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="table-cell font-mono">
-                                                                    <span class="font-bold text-slate-700">${s.ipAddress || '—'}</span>
-                                                                    <span class="text-slate-400 block text-[10px]">${[s.city, s.country].filter(Boolean).join(', ') || 'Unknown'}</span>
-                                                                </td>
-                                                                <td class="table-cell text-slate-600">
-                                                                    ${formatDateTime(s.loginAt || s.$createdAt)}
-                                                                </td>
-                                                                <td class="table-cell font-mono">
-                                                                    ${formatDuration(s.sessionDuration)}
-                                                                </td>
-                                                                <td class="table-cell">
-                                                                    ${s.isActive 
-                                                                        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Active</span>`
-                                                                        : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">Ended</span>`
-                                                                    }
-                                                                </td>
-                                                            </tr>
-                                                        `;
-                                                    }).join('')}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    `}
-                                </div>
-                            </div>
-
                             <!-- Examination Attempts History -->
                             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
                                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">

@@ -79,25 +79,27 @@ export function filterAndPaginate(dataset, {
 
     // Apply full-dataset search across specified attributes
     if (q.length > 0) {
+        const terms = q.split(/\s+/).filter(t => t.length > 0);
+        
         filtered = filtered.filter(item => {
             if (!item) return false;
 
-            // Always check document ID
-            if (item.$id && item.$id.toLowerCase().includes(q)) return true;
-
-            // Check each designated search field
-            for (const field of searchFields) {
-                if (typeof field === 'function') {
-                    const val = field(item);
-                    if (val && String(val).toLowerCase().includes(q)) return true;
-                } else if (typeof field === 'string') {
-                    const val = item[field];
-                    if (val !== null && val !== undefined && String(val).toLowerCase().includes(q)) {
-                        return true;
+            return terms.every(term => {
+                if (item.$id && item.$id.toLowerCase().includes(term)) return true;
+                
+                for (const field of searchFields) {
+                    if (typeof field === 'function') {
+                        const val = field(item);
+                        if (val && String(val).toLowerCase().includes(term)) return true;
+                    } else if (typeof field === 'string') {
+                        const val = item[field];
+                        if (val !== null && val !== undefined && String(val).toLowerCase().includes(term)) {
+                            return true;
+                        }
                     }
                 }
-            }
-            return false;
+                return false;
+            });
         });
     }
 

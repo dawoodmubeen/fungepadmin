@@ -55,12 +55,12 @@ export const masteryTopicsController = {
                 <!-- Tab 1: Topic Tests Content -->
                 <div id="tab-content-topics" class="${this.currentTab === 'topics' ? '' : 'hidden'} space-y-4">
                     <!-- Filters & Search Toolbar -->
-                    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div class="relative flex-1 w-full md:max-w-md">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                        <div class="relative lg:col-span-5">
                             <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
                             <input type="text" id="search-topics" placeholder="Search topic tests by title, chapter, section..." class="form-input pl-10 text-xs sm:text-sm">
                         </div>
-                        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:col-span-7">
                             <select id="filter-topic-section" class="form-input text-xs sm:text-sm py-2">
                                 <option value="all">All Sections</option>
                             </select>
@@ -402,6 +402,41 @@ export const masteryTopicsController = {
                     </form>
                 </div>
             </div>
+
+            <!-- Edit JSON Modal -->
+            <div id="edit-json-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden modal-overlay">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col modal-content overflow-hidden border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                                <i data-lucide="code" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Edit JSON File</h2>
+                                <p class="text-xs text-slate-500">Modify the contents of the JSON question bank directly</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-btn p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-0 flex-1 flex flex-col relative bg-slate-900">
+                        <textarea id="json-editor-textarea" class="w-full flex-1 bg-slate-900 text-emerald-400 font-mono text-sm p-6 border-none focus:ring-0 resize-none leading-relaxed" spellcheck="false" placeholder="Loading JSON..."></textarea>
+                    </div>
+
+                    <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                        <div class="text-[11px] font-mono text-slate-500" id="json-editor-info">No file</div>
+                        <div class="flex gap-3">
+                            <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                            <button type="button" id="json-editor-save-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
 
         if (window.lucide) window.lucide.createIcons();
@@ -448,6 +483,7 @@ export const masteryTopicsController = {
         const replaceModal = document.getElementById('replace-json-modal');
         const editTopicModal = document.getElementById('edit-topic-modal');
         const sectionModal = document.getElementById('section-modal');
+        const editJsonModal = document.getElementById('edit-json-modal');
 
         const openModal = (m) => {
             if (!m) return;
@@ -463,7 +499,7 @@ export const masteryTopicsController = {
 
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                [uploadModal, replaceModal, editTopicModal, sectionModal].forEach(closeModal);
+                [uploadModal, replaceModal, editTopicModal, sectionModal, editJsonModal].forEach(closeModal);
             });
         });
 
@@ -709,6 +745,8 @@ export const masteryTopicsController = {
             });
             this.renderSectionsCards(filtered);
         }, 200));
+
+        this.setupJsonEditorEvents();
     },
 
     renderSectionChapters() {
@@ -1004,6 +1042,17 @@ export const masteryTopicsController = {
                     <!-- Actions -->
                     <td class="table-cell text-right">
                         <div class="flex items-center justify-end gap-1.5">
+                            <!-- Edit JSON Button -->
+                            ${topic.file_id ? `
+                            <button class="btn-edit-json px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 transition"
+                                data-id="${topic.$id}"
+                                data-file="${topic.file_id}"
+                                title="Edit existing JSON file">
+                                <i data-lucide="code" class="w-3.5 h-3.5"></i>
+                                <span>Edit JSON</span>
+                            </button>
+                            ` : ''}
+
                             <!-- Replace JSON Button -->
                             <button class="btn-replace-json px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs flex items-center gap-1 transition"
                                 data-id="${topic.$id}"
@@ -1061,6 +1110,16 @@ export const masteryTopicsController = {
         if (window.lucide) window.lucide.createIcons();
 
         // Bind table row actions
+        // Edit JSON inline
+        container.querySelectorAll('.btn-edit-json').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const b = e.currentTarget;
+                const fileId = b.dataset.file;
+                const topicId = b.dataset.id;
+                this.openEditJsonModal(topicId, fileId);
+            });
+        });
+
         // 1. Replace JSON
         container.querySelectorAll('.btn-replace-json').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1564,5 +1623,97 @@ export const masteryTopicsController = {
         if (Array.isArray(parsed.data)) return parsed.data.length;
         if (typeof parsed.total_questions === 'number') return parsed.total_questions;
         return 0;
+    },
+
+    setupJsonEditorEvents() {
+        const saveBtn = document.getElementById('json-editor-save-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.handleSaveEditJson());
+        }
+    },
+
+    async openEditJsonModal(topicId, fileId) {
+        if (!fileId) return showToast('No file attached to this topic.', 'warning');
+        const modal = document.getElementById('edit-json-modal');
+        const textarea = document.getElementById('json-editor-textarea');
+        const info = document.getElementById('json-editor-info');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('modal-active'), 10);
+        
+        textarea.value = 'Loading JSON data from bucket...';
+        textarea.disabled = true;
+        info.textContent = `File: ${fileId} | Topic: ${topicId}`;
+        this.currentEditJsonFileId = fileId;
+        this.currentEditJsonTopicId = topicId;
+        
+        try {
+            const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.masteryTopicsBucket}/files/${fileId}/download?project=${CONFIG.projectId}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Failed to fetch JSON file.');
+            const data = await res.json();
+            textarea.value = JSON.stringify(data, null, 2);
+            textarea.disabled = false;
+        } catch (err) {
+            console.error(err);
+            textarea.value = 'Error loading JSON data.';
+            showToast('Failed to load JSON from bucket.', 'error');
+        }
+    },
+
+    async handleSaveEditJson() {
+        const textarea = document.getElementById('json-editor-textarea');
+        const btn = document.getElementById('json-editor-save-btn');
+        const content = textarea.value.trim();
+        
+        if (!content) return showToast('JSON cannot be empty.', 'error');
+        
+        let parsedData;
+        try {
+            parsedData = JSON.parse(content);
+        } catch (err) {
+            return showToast('Invalid JSON syntax: ' + err.message, 'error');
+        }
+        
+        const qCount = this.detectQuestionCount(parsedData);
+        btn.disabled = true;
+        btn.innerHTML = 'Saving...';
+        
+        try {
+            // Create a blob and upload it
+            const blob = new Blob([JSON.stringify(parsedData, null, 2)], { type: 'application/json' });
+            const fileObj = new File([blob], `${this.currentEditJsonFileId}.json`, { type: 'application/json' });
+            
+            // Delete old file from bucket
+            try {
+                await storage.deleteFile(CONFIG.masteryTopicsBucket, this.currentEditJsonFileId);
+            } catch (delErr) {
+                console.warn('Old file deletion failed (might not exist):', delErr);
+            }
+            
+            // Upload new file
+            const uploadRes = await storage.createFile(CONFIG.masteryTopicsBucket, ID.unique(), fileObj);
+            
+            // Update topic document with new file_id and total_questions
+            await databases.updateDocument(CONFIG.databaseId, CONFIG.masteryTopicsCol, this.currentEditJsonTopicId, {
+                file_id: uploadRes.$id,
+                total_questions: qCount
+            });
+            
+            showToast('JSON updated successfully!', 'success');
+            
+            const modal = document.getElementById('edit-json-modal');
+            modal.classList.remove('modal-active');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+            
+            await this.loadTopics();
+        } catch (err) {
+            console.error(err);
+            showToast(err.message || 'Failed to save JSON.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i><span>Save Changes</span>`;
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
 };

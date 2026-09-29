@@ -24,12 +24,12 @@ export const mockTestsController = {
                 </div>
 
                 <!-- Filter & Search Toolbar -->
-                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div class="relative flex-1 w-full md:max-w-md">
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                    <div class="relative lg:col-span-5">
                         <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
                         <input type="text" id="search-tests" placeholder="Search tests by title or university..." class="form-input pl-10 text-xs sm:text-sm">
                     </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:col-span-7">
                         <select id="filter-university" class="form-input text-xs sm:text-sm py-2">
                             <option value="all">All Universities</option>
                         </select>

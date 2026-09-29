@@ -456,6 +456,7 @@ export const pastPapersController = {
                 const uniSelect = document.getElementById('p-uni');
                 const uniName = uniSelect.options[uniSelect.selectedIndex].getAttribute('data-name');
 
+                const now = new Date().toISOString();
                 const payload = {
                     title: document.getElementById('p-title').value.trim(),
                     university_id: uniSelect.value,
@@ -466,13 +467,15 @@ export const pastPapersController = {
                     subject: document.getElementById('p-subject').value.trim(),
                     is_premium: document.getElementById('p-premium').checked,
                     status: document.getElementById('p-status').value,
-                    file_id: fileId
+                    file_id: fileId,
+                    updated_at: now
                 };
 
                 if (isEdit) {
                     await databases.updateDocument(CONFIG.databaseId, CONFIG.pastPapersCol, id, payload);
                     showToast("Past paper updated successfully", "success");
                 } else {
+                    payload.created_at = now;
                     await databases.createDocument(CONFIG.databaseId, CONFIG.pastPapersCol, ID.unique(), payload);
                     showToast("Past paper uploaded successfully", "success");
                 }

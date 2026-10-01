@@ -1628,7 +1628,10 @@ export const masteryTopicsController = {
     setupJsonEditorEvents() {
         const saveBtn = document.getElementById('json-editor-save-btn');
         if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.handleSaveEditJson());
+            saveBtn.onclick = (e) => {
+                e.preventDefault();
+                this.handleSaveEditJson();
+            };
         }
     },
 
@@ -1648,7 +1651,8 @@ export const masteryTopicsController = {
         this.currentEditJsonTopicId = topicId;
         
         try {
-            const url = `${CONFIG.endpoint}/storage/buckets/${CONFIG.masteryJsonsBucket}/files/${fileId}/download?project=${CONFIG.projectId}`;
+            const urlObj = storage.getFileDownload(CONFIG.masteryJsonsBucket, fileId);
+            const url = urlObj.href ? urlObj.href : urlObj;
             const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch JSON file.');
             const data = await res.json();
@@ -1656,8 +1660,11 @@ export const masteryTopicsController = {
             textarea.disabled = false;
         } catch (err) {
             console.error(err);
-            textarea.value = 'Error loading JSON data.';
-            showToast('Failed to load JSON from bucket.', 'error');
+            textarea.value = '{
+  "error": "Failed to load JSON from bucket. You can paste your JSON here to overwrite it."
+}';
+            textarea.disabled = false;
+            showToast('Failed to load JSON. Bucket/File not found or CORS error.', 'error');
         }
     },
 
@@ -1667,6 +1674,7 @@ export const masteryTopicsController = {
         const content = textarea.value.trim();
         
         if (!content) return showToast('JSON cannot be empty.', 'error');
+        if (content.includes('"error": "Failed to load JSON')) return showToast('Please replace the error message with valid JSON before saving.', 'warning');
         
         let parsedData;
         try {

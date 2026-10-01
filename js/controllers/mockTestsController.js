@@ -356,6 +356,7 @@ export const mockTestsController = {
     },
 
     setupEvents() {
+        this.setupJsonEditorEvents();
         // Modal toggles
         const createModal = document.getElementById('create-mock-modal');
         const updateFilesModal = document.getElementById('update-files-modal');
@@ -1222,3 +1223,4 @@ export const mockTestsController = {
         });
     }
 };
+

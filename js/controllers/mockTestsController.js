@@ -720,8 +720,10 @@ export const mockTestsController = {
             valBox.innerHTML += `> [UPLOAD] Uploading validated files to Appwrite Storage...<br>`;
 
             // Upload files to respective buckets
-            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `test-${Date.now()}`;
-            const testId = validation.testId || slug;
+            const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `test-${Date.now()}`;
+            const shortId = ID.unique().substring(0, 6);
+            const slug = `${baseSlug}-${shortId}`;
+            const testId = validation.testId ? `${validation.testId}-${shortId}` : slug;
             const patternFileObj = new File([filePattern], `${testId}_pattern.json`, { type: 'application/json' });
             const mcqFileObj = new File([fileMcq], `${testId}_mcqs.json`, { type: 'application/json' });
 

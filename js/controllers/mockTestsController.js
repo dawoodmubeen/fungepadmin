@@ -1120,8 +1120,10 @@ export const mockTestsController = {
     },
 
     async fetchFileJSON(bucketId, fileId) {
-        const url = storage.getFileDownload(bucketId, fileId);
-        const res = await fetch(url.href);
+        const urlObj = storage.getFileDownload(bucketId, fileId);
+        const urlStr = urlObj.href ? urlObj.href : urlObj;
+        const fetchUrl = urlStr + (urlStr.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error(`Failed to load file ${fileId} from bucket ${bucketId}`);
         return await res.json();
     },
@@ -1159,7 +1161,7 @@ export const mockTestsController = {
         info.textContent = `File: ${fileId} | Test ID: ${testId} | Type: ${type}`;
         
         try {
-            const url = `${CONFIG.endpoint}/storage/buckets/${bucketId}/files/${fileId}/download?project=${CONFIG.projectId}`;
+            const url = `${CONFIG.endpoint}/storage/buckets/${bucketId}/files/${fileId}/download?project=${CONFIG.projectId}&t=${Date.now()}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch JSON file.');
             const data = await res.json();

@@ -1652,8 +1652,9 @@ export const masteryTopicsController = {
         
         try {
             const urlObj = storage.getFileDownload(CONFIG.masteryJsonsBucket, fileId);
-            const url = urlObj.href ? urlObj.href : urlObj;
-            const res = await fetch(url);
+            const urlStr = urlObj.href ? urlObj.href : urlObj;
+            const fetchUrl = urlStr + (urlStr.includes('?') ? '&' : '?') + 't=' + Date.now();
+            const res = await fetch(fetchUrl);
             if (!res.ok) throw new Error('Failed to fetch JSON file.');
             const data = await res.json();
             textarea.value = JSON.stringify(data, null, 2);

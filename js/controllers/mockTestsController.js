@@ -544,19 +544,19 @@ export const mockTestsController = {
                                 <span class="w-2 h-2 rounded-full ${hasPattern ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
                                 <span class="text-slate-600 font-medium">Pattern:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasPattern ? 'Uploaded' : 'Missing'}</span>
-                                ${hasPattern ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.pattern_file_id}" data-type="pattern" title="Edit Pattern JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${hasPattern ? `<button type="button" class="btn-edit-json px-2 py-1 ml-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 transition" data-id="${test.$id}" data-file="${test.pattern_file_id}" data-type="pattern" title="Edit Pattern JSON"><i data-lucide="code" class="w-3 h-3"></i><span>Edit</span></button>` : ''}
                             </div>
                             <div class="flex items-center gap-1.5 group">
                                 <span class="w-2 h-2 rounded-full ${hasMcq ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
                                 <span class="text-slate-600 font-medium">MCQs:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasMcq ? 'Uploaded' : 'Missing'}</span>
-                                ${hasMcq ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.mcq_file_id}" data-type="mcq" title="Edit MCQ JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${hasMcq ? `<button type="button" class="btn-edit-json px-2 py-1 ml-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 transition" data-id="${test.$id}" data-file="${test.mcq_file_id}" data-type="mcq" title="Edit MCQ JSON"><i data-lucide="code" class="w-3 h-3"></i><span>Edit</span></button>` : ''}
                             </div>
                             <div class="flex items-center gap-1.5 group">
                                 <span class="w-2 h-2 rounded-full ${hasSolution ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
                                 <span class="text-slate-600 font-medium">Solutions:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasSolution ? 'Uploaded' : 'Pending'}</span>
-                                ${hasSolution ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.solution_file_id}" data-type="solution" title="Edit Solution JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${hasSolution ? `<button type="button" class="btn-edit-json px-2 py-1 ml-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 transition" data-id="${test.$id}" data-file="${test.solution_file_id}" data-type="solution" title="Edit Solution JSON"><i data-lucide="code" class="w-3 h-3"></i><span>Edit</span></button>` : ''}
                             </div>
                         </div>
                     </td>

@@ -270,6 +270,41 @@ export const mockTestsController = {
                 </div>
             </div>
 
+
+            <!-- Edit JSON Modal -->
+            <div id="edit-json-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden modal-overlay">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col modal-content overflow-hidden border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                                <i data-lucide="code" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Edit JSON File</h2>
+                                <p class="text-xs text-slate-500">Modify the contents of the JSON directly</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-btn p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-0 flex-1 flex flex-col relative bg-slate-900">
+                        <textarea id="json-editor-textarea" class="w-full flex-1 bg-slate-900 text-emerald-400 font-mono text-sm p-6 border-none focus:ring-0 resize-none leading-relaxed" spellcheck="false" placeholder="Loading JSON..."></textarea>
+                    </div>
+
+                    <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                        <div class="text-[11px] font-mono text-slate-500" id="json-editor-info">No file</div>
+                        <div class="flex gap-3">
+                            <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                            <button type="button" id="json-editor-save-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Edit Test Metadata Modal -->
             <div id="edit-meta-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden modal-overlay">
                 <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-content overflow-hidden border border-slate-100">
@@ -335,11 +370,14 @@ export const mockTestsController = {
             setTimeout(() => createModal.classList.add('modal-active'), 10);
         });
 
+        const editJsonModal = document.getElementById('edit-json-modal');
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                [createModal, updateFilesModal, editMetaModal].forEach(m => {
-                    m?.classList.remove('modal-active');
-                    setTimeout(() => m?.classList.add('hidden'), 200);
+                [createModal, updateFilesModal, editMetaModal, editJsonModal].forEach(m => {
+                    if(m) {
+                        m.classList.remove('modal-active');
+                        setTimeout(() => m.classList.add('hidden'), 200);
+                    }
                 });
             });
         });
@@ -499,23 +537,26 @@ export const mockTestsController = {
                         </div>
                     </td>
 
-                    <!-- 3-File Status -->
+                                        <!-- 3-File Status -->
                     <td class="table-cell">
                         <div class="flex flex-col gap-1 text-xs">
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5 group">
                                 <span class="w-2 h-2 rounded-full ${hasPattern ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
                                 <span class="text-slate-600 font-medium">Pattern:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasPattern ? 'Uploaded' : 'Missing'}</span>
+                                ${hasPattern ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.pattern_file_id}" data-type="pattern" title="Edit Pattern JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5 group">
                                 <span class="w-2 h-2 rounded-full ${hasMcq ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
                                 <span class="text-slate-600 font-medium">MCQs:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasMcq ? 'Uploaded' : 'Missing'}</span>
+                                ${hasMcq ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.mcq_file_id}" data-type="mcq" title="Edit MCQ JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5 group">
                                 <span class="w-2 h-2 rounded-full ${hasSolution ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
                                 <span class="text-slate-600 font-medium">Solutions:</span>
                                 <span class="font-mono text-[11px] text-slate-500">${hasSolution ? 'Uploaded' : 'Pending'}</span>
+                                ${hasSolution ? `<button class="btn-edit-json p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-sky-600 transition opacity-0 group-hover:opacity-100" data-id="${test.$id}" data-file="${test.solution_file_id}" data-type="solution" title="Edit Solution JSON"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>` : ''}
                             </div>
                         </div>
                     </td>
@@ -591,6 +632,13 @@ export const mockTestsController = {
         if (window.lucide) window.lucide.createIcons();
 
         // Bind Row Events
+        container.querySelectorAll('.btn-edit-json').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const b = e.currentTarget;
+                this.openEditJsonModal(b.dataset.id, b.dataset.file, b.dataset.type);
+            });
+        });
+
         // 1. Update 3 Files Modal
         container.querySelectorAll('.btn-update-files').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1063,6 +1111,106 @@ export const mockTestsController = {
         const res = await fetch(url.href);
         if (!res.ok) throw new Error(`Failed to load file ${fileId} from bucket ${bucketId}`);
         return await res.json();
+    },
+
+
+    setupJsonEditorEvents() {
+        const saveBtn = document.getElementById('json-editor-save-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.handleSaveEditJson());
+        }
+    },
+
+    async openEditJsonModal(testId, fileId, type) {
+        if (!fileId) return showToast('No file attached.', 'warning');
+        const modal = document.getElementById('edit-json-modal');
+        const textarea = document.getElementById('json-editor-textarea');
+        const info = document.getElementById('json-editor-info');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('modal-active'), 10);
+        
+        textarea.value = 'Loading JSON data from bucket...';
+        textarea.disabled = true;
+        
+        this.currentEditJsonFileId = fileId;
+        this.currentEditJsonTestId = testId;
+        this.currentEditJsonType = type;
+        
+        let bucketId;
+        if (type === 'pattern') bucketId = CONFIG.testPatternsBucket;
+        else if (type === 'mcq') bucketId = CONFIG.mockJsonsBucket;
+        else if (type === 'solution') bucketId = CONFIG.solutionsBucket;
+        
+        this.currentEditJsonBucket = bucketId;
+        info.textContent = `File: ${fileId} | Test ID: ${testId} | Type: ${type}`;
+        
+        try {
+            const url = `${CONFIG.endpoint}/storage/buckets/${bucketId}/files/${fileId}/download?project=${CONFIG.projectId}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Failed to fetch JSON file.');
+            const data = await res.json();
+            textarea.value = JSON.stringify(data, null, 2);
+            textarea.disabled = false;
+        } catch (err) {
+            console.error(err);
+            textarea.value = 'Error loading JSON data.';
+            showToast('Failed to load JSON from bucket.', 'error');
+        }
+    },
+
+    async handleSaveEditJson() {
+        const textarea = document.getElementById('json-editor-textarea');
+        const btn = document.getElementById('json-editor-save-btn');
+        const content = textarea.value.trim();
+        
+        if (!content) return showToast('JSON cannot be empty.', 'error');
+        
+        let parsedData;
+        try {
+            parsedData = JSON.parse(content);
+        } catch (err) {
+            return showToast('Invalid JSON syntax: ' + err.message, 'error');
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = 'Saving...';
+        
+        try {
+            const blob = new Blob([JSON.stringify(parsedData, null, 2)], { type: 'application/json' });
+            const fileObj = new File([blob], `${this.currentEditJsonFileId}.json`, { type: 'application/json' });
+            
+            try {
+                await storage.deleteFile(this.currentEditJsonBucket, this.currentEditJsonFileId);
+            } catch (delErr) {
+                console.warn('Old file deletion failed:', delErr);
+            }
+            
+            const uploadRes = await storage.createFile(this.currentEditJsonBucket, ID.unique(), fileObj);
+            
+            let updatePayload = {};
+            if (this.currentEditJsonType === 'pattern') updatePayload.pattern_file_id = uploadRes.$id;
+            else if (this.currentEditJsonType === 'mcq') updatePayload.mcq_file_id = uploadRes.$id;
+            else if (this.currentEditJsonType === 'solution') updatePayload.solution_file_id = uploadRes.$id;
+            
+            await databases.updateDocument(CONFIG.databaseId, CONFIG.mockTestsCol, this.currentEditJsonTestId, updatePayload);
+            
+            showToast('JSON updated successfully!', 'success');
+            
+            const modal = document.getElementById('edit-json-modal');
+            modal.classList.remove('modal-active');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+            
+            await this.loadTestsList();
+            
+        } catch (err) {
+            console.error(err);
+            showToast(err.message || 'Failed to update JSON', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i><span>Save Changes</span>`;
+            if (window.lucide) window.lucide.createIcons();
+        }
     },
 
     readFileAsText(file) {

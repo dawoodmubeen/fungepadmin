@@ -614,6 +614,9 @@ export const mockTestsController = {
                             <button class="btn-delete-test p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                                 data-id="${test.$id}"
                                 data-title="${test.title}"
+                                data-pattern="${test.pattern_file_id || ''}"
+                                data-mcq="${test.mcq_file_id || ''}"
+                                data-sol="${test.solution_file_id || ''}"
                                 title="Delete Test">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
@@ -714,10 +717,19 @@ export const mockTestsController = {
                 const b = e.currentTarget;
                 const id = b.dataset.id;
                 const title = b.dataset.title;
+                const pattern = b.dataset.pattern;
+                const mcq = b.dataset.mcq;
+                const sol = b.dataset.sol;
 
                 if (confirm(`Are you sure you want to permanently delete "${title}"? This cannot be undone.`)) {
                     try {
                         await databases.deleteDocument(CONFIG.databaseId, CONFIG.mockTestsCol, id);
+
+                        // Delete associated files from storage buckets
+                        if (pattern) try { await storage.deleteFile(CONFIG.testPatternsBucket, pattern); } catch(e) { console.warn("Failed to delete pattern:", e); }
+                        if (mcq) try { await storage.deleteFile(CONFIG.mockJsonsBucket, mcq); } catch(e) { console.warn("Failed to delete mcq:", e); }
+                        if (sol) try { await storage.deleteFile(CONFIG.solutionsBucket, sol); } catch(e) { console.warn("Failed to delete sol:", e); }
+
                         showToast('Test removed successfully', 'success');
                         await this.loadTestsList();
                     } catch (err) {
@@ -1187,14 +1199,14 @@ export const mockTestsController = {
                 console.warn('Old file deletion failed:', delErr);
             }
             
-            const uploadRes = await storage.createFile(this.currentEditJsonBucket, ID.unique(), fileObj);
+            const uploadRes = await storage.createFile(this.currentEditJsonBucket, this.currentEditJsonFileId, fileObj);
             
             let updatePayload = {};
             if (this.currentEditJsonType === 'pattern') updatePayload.pattern_file_id = uploadRes.$id;
             else if (this.currentEditJsonType === 'mcq') updatePayload.mcq_file_id = uploadRes.$id;
             else if (this.currentEditJsonType === 'solution') updatePayload.solution_file_id = uploadRes.$id;
             
-            await databases.updateDocument(CONFIG.databaseId, CONFIG.mockTestsCol, this.currentEditJsonTestId, updatePayload);
+            // await databases.updateDocument(CONFIG.databaseId, CONFIG.mockTestsCol, this.currentEditJsonTestId, updatePayload);
             
             showToast('JSON updated successfully!', 'success');
             

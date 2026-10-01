@@ -309,6 +309,13 @@ export const pastPapersController = {
                         <a href="#past-papers/edit/${paper.$id}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition">
                             Edit
                         </a>
+                        <button class="btn-delete-paper px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition flex items-center gap-1 ml-2"
+                            data-id="${paper.$id}"
+                            data-title="${paper.title}"
+                            data-file="${paper.file_id || ''}">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Delete</span>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -330,6 +337,33 @@ export const pastPapersController = {
                 const modal = document.getElementById('pdf-preview-modal');
                 modal.classList.remove('hidden');
                 setTimeout(() => modal.classList.add('modal-active'), 10);
+            });
+        });
+
+        // Bind Delete
+        tbody.querySelectorAll('.btn-delete-paper').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const b = e.currentTarget;
+                const id = b.dataset.id;
+                const title = b.dataset.title;
+                const fileId = b.dataset.file;
+
+                if (confirm(`Are you sure you want to delete past paper "${title}"?`)) {
+                    try {
+                        await databases.deleteDocument(CONFIG.databaseId, CONFIG.pastPapersCol, id);
+                        if (fileId) {
+                            try {
+                                await storage.deleteFile(CONFIG.pastPapersBucket, fileId);
+                            } catch (err) {
+                                console.warn("Failed to delete PDF from bucket", err);
+                            }
+                        }
+                        showToast("Past paper deleted successfully", "success");
+                        this.loadAllPapers();
+                    } catch (err) {
+                        showToast(err.message || "Failed to delete past paper", "error");
+                    }
+                }
             });
         });
     },

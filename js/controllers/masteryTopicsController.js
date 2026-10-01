@@ -1660,9 +1660,9 @@ export const masteryTopicsController = {
             textarea.disabled = false;
         } catch (err) {
             console.error(err);
-            textarea.value = '{
+            textarea.value = `{
   "error": "Failed to load JSON from bucket. You can paste your JSON here to overwrite it."
-}';
+}`;
             textarea.disabled = false;
             showToast('Failed to load JSON. Bucket/File not found or CORS error.', 'error');
         }
@@ -1699,12 +1699,11 @@ export const masteryTopicsController = {
                 console.warn('Old file deletion failed (might not exist):', delErr);
             }
             
-            // Upload new file
-            const uploadRes = await storage.createFile(CONFIG.masteryJsonsBucket, ID.unique(), fileObj);
+            // Upload new file with same ID
+            await storage.createFile(CONFIG.masteryJsonsBucket, this.currentEditJsonFileId, fileObj);
             
-            // Update topic document with new file_id and total_questions
+            // Update topic document with total_questions ONLY
             await databases.updateDocument(CONFIG.databaseId, CONFIG.masteryTopicsCol, this.currentEditJsonTopicId, {
-                file_id: uploadRes.$id,
                 total_questions: qCount
             });
             

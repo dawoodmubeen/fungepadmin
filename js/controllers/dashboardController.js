@@ -36,7 +36,7 @@ export const dashboardController = {
                 </div>
 
                 <!-- Executive 5 KPI Metric Cards -->
-                <div class="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto pb-4 snap-x" id="kpi-metrics-grid" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+                <div class="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto pb-4 snap-x custom-horizontal-scrollbar" id="kpi-metrics-grid">
                     ${Array(5).fill(0).map(() => `
                         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs animate-pulse min-w-[240px] lg:min-w-0 snap-center">
                             <div class="w-8 h-8 bg-slate-200 rounded-xl mb-3"></div>

@@ -257,8 +257,11 @@ export const premiumRequestsController = {
         container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading order telemetry...</div>`;
         try {
             const req = await databases.getDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, orderId);
-            const receiptUrl = req.receipt_file_id 
-                ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.paymentReceiptsBucket}/files/${req.receipt_file_id}/view?project=${CONFIG.projectId}`
+            const receiptViewUrl = req.receipt_file_id 
+                ? storage.getFileView(CONFIG.paymentReceiptsBucket, req.receipt_file_id).href
+                : null;
+            const receiptPreviewUrl = req.receipt_file_id
+                ? storage.getFilePreview(CONFIG.paymentReceiptsBucket, req.receipt_file_id, 1200, 0, 'center', 90).href
                 : null;
 
             container.innerHTML = `
@@ -380,13 +383,13 @@ export const premiumRequestsController = {
                                     <i data-lucide="image" class="w-4 h-4 text-sky-600"></i>
                                     <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Payment Screenshot Verification</h3>
                                 </div>
-                                ${receiptUrl ? `
+                                ${receiptPreviewUrl ? `
                                     <div class="flex items-center gap-2">
-                                        <a href="${receiptUrl}" target="_blank" download class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
+                                        <a href="${receiptViewUrl}" target="_blank" download class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
                                             <i data-lucide="download" class="w-3.5 h-3.5"></i>
                                             <span>Download</span>
                                         </a>
-                                        <a href="${receiptUrl}" target="_blank" class="p-1.5 rounded-lg bg-sky-50 text-sky-700 text-xs font-bold transition flex items-center gap-1">
+                                        <a href="${receiptViewUrl}" target="_blank" class="p-1.5 rounded-lg bg-sky-50 text-sky-700 text-xs font-bold transition flex items-center gap-1">
                                             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                                             <span>Full Screen</span>
                                         </a>
@@ -395,8 +398,8 @@ export const premiumRequestsController = {
                             </div>
 
                             <div class="flex-1 bg-slate-900/5 p-4 flex items-center justify-center relative min-h-[440px]">
-                                ${receiptUrl ? `
-                                    <img src="${receiptUrl}" alt="Payment Receipt" class="max-w-full max-h-[600px] object-contain rounded-2xl shadow-md border border-white">
+                                ${receiptPreviewUrl ? `
+                                    <iframe src="${receiptViewUrl}" class="w-full h-[600px] rounded-2xl shadow-md border border-white bg-white" frameborder="0"></iframe>
                                 ` : `
                                     <div class="text-center text-slate-400">
                                         <i data-lucide="file-question" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>

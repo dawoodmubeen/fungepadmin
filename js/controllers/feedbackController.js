@@ -65,7 +65,7 @@ export const feedbackController = {
                                 </tr>
                             </thead>
                             <tbody id="feedback-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading tickets from database...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading tickets from database...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -101,7 +101,7 @@ export const feedbackController = {
     async loadAllTickets() {
         const tbody = document.getElementById('feedback-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading tickets from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading tickets from database...</td></tr>`;
         }
 
         try {
@@ -206,7 +206,7 @@ export const feedbackController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No support tickets in this queue.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">No support tickets in this queue.</td></tr>`;
             return;
         }
 
@@ -262,7 +262,7 @@ export const feedbackController = {
     },
 
     async renderDetails(container, ticketId) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading ticket details...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading ticket details...</div>`;
         try {
             const ticket = await databases.getDocument(CONFIG.databaseId, CONFIG.feedbackCol, ticketId);
 

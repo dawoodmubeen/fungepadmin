@@ -77,7 +77,7 @@ export const attemptsController = {
                                 </tr>
                             </thead>
                             <tbody id="attempts-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="8" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading telemetry...</td></tr>
+                                <tr><td colspan="8" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading telemetry...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -267,7 +267,7 @@ export const attemptsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No attempt sessions found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-white text-xs font-semibold uppercase">No attempt sessions found.</td></tr>`;
             return;
         }
 

@@ -56,7 +56,7 @@ export const subscriptionsController = {
                                 </tr>
                             </thead>
                             <tbody id="subs-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading subscriptions...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading subscriptions...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -84,7 +84,7 @@ export const subscriptionsController = {
     async loadAllSubs() {
         const tbody = document.getElementById('subs-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading subscriptions from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading subscriptions from database...</td></tr>`;
         }
 
         try {
@@ -176,7 +176,7 @@ export const subscriptionsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No subscription records found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">No subscription records found.</td></tr>`;
             return;
         }
 
@@ -219,7 +219,7 @@ export const subscriptionsController = {
     },
 
     async renderForm(container, subId) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading subscription data...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading subscription data...</div>`;
 
         try {
             const sub = await databases.getDocument(CONFIG.databaseId, CONFIG.subscriptionsCol, subId);

@@ -39,9 +39,9 @@ export const dashboardController = {
                 <div class="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto pb-4 snap-x custom-horizontal-scrollbar" id="kpi-metrics-grid">
                     ${Array(5).fill(0).map(() => `
                         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs animate-pulse min-w-[240px] lg:min-w-0 snap-center">
-                            <div class="w-8 h-8 bg-slate-200 rounded-xl mb-3"></div>
-                            <div class="h-3 bg-slate-200 rounded w-2/3 mb-2"></div>
-                            <div class="h-6 bg-slate-200 rounded w-1/2"></div>
+                            <div class="w-8 h-8 bg-white/30 rounded-xl mb-3"></div>
+                            <div class="h-3 bg-white/30 rounded w-2/3 mb-2"></div>
+                            <div class="h-6 bg-white/30 rounded w-1/2"></div>
                         </div>
                     `).join('')}
                 </div>
@@ -104,7 +104,7 @@ export const dashboardController = {
                             </a>
                         </div>
                         <div class="p-0 flex-1" id="dash-pending-orders-container">
-                            <div class="p-8 text-center text-slate-400 text-xs font-semibold">Loading orders...</div>
+                            <div class="p-8 text-center text-white text-xs font-semibold">Loading orders...</div>
                         </div>
                     </div>
 
@@ -123,7 +123,7 @@ export const dashboardController = {
                             </a>
                         </div>
                         <div class="p-0 flex-1" id="dash-feedback-container">
-                            <div class="p-8 text-center text-slate-400 text-xs font-semibold">Loading tickets...</div>
+                            <div class="p-8 text-center text-white text-xs font-semibold">Loading tickets...</div>
                         </div>
                     </div>
                 </div>

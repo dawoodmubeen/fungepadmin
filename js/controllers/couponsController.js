@@ -56,7 +56,7 @@ export const couponsController = {
                                 </tr>
                             </thead>
                             <tbody id="coupons-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading coupons...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading coupons...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -102,7 +102,7 @@ export const couponsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No promo codes found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">No promo codes found.</td></tr>`;
             return;
         }
 
@@ -278,7 +278,7 @@ export const couponsController = {
     },
 
     async renderAudit(container, couponId) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading redemption audit trail...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading redemption audit trail...</div>`;
 
         try {
             const [coupon, usagesRes] = await Promise.all([

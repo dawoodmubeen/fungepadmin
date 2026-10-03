@@ -68,7 +68,7 @@ export const pastPapersController = {
                                 </tr>
                             </thead>
                             <tbody id="papers-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading papers...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading papers...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -141,7 +141,7 @@ export const pastPapersController = {
     async loadAllPapers() {
         const tbody = document.getElementById('papers-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading past papers from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading past papers from database...</td></tr>`;
         }
 
         try {
@@ -269,7 +269,7 @@ export const pastPapersController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No past papers found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">No past papers found.</td></tr>`;
             return;
         }
 
@@ -375,7 +375,7 @@ export const pastPapersController = {
         };
         let isEdit = false;
 
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading form...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading form...</div>`;
 
         let universities = [];
         try {

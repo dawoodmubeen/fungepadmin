@@ -117,6 +117,44 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
 }
 
+/* Main Content Area Blue Scrollbar */
+#main-view {
+  scrollbar-width: thin;
+  scrollbar-color: #00adef transparent;
+}
+#main-view::-webkit-scrollbar {
+  width: 8px;
+}
+#main-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+#main-view::-webkit-scrollbar-thumb {
+  background: #00adef;
+  border-radius: 10px;
+}
+#main-view::-webkit-scrollbar-thumb:hover {
+  background: #0090d0;
+}
+
+/* Global body scrollbar (right edge) */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #00adef transparent;
+}
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+  background: #00adef;
+  border-radius: 10px;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background: #0090d0;
+}
+
 /* Glass effect for main cards in content area */
 #main-view .bg-white {
   background-color: rgba(255, 255, 255, 0.92);

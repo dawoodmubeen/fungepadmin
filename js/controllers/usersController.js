@@ -65,7 +65,7 @@ export const usersController = {
                                 </tr>
                             </thead>
                             <tbody id="users-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading students from database...</td></tr>
+                                <tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading students from database...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -99,7 +99,7 @@ export const usersController = {
     async loadAllUsers() {
         const tbody = document.getElementById('users-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading all students from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading all students from database...</td></tr>`;
         }
 
         try {
@@ -211,7 +211,7 @@ export const usersController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No student accounts found matching criteria.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-white text-xs font-semibold uppercase">No student accounts found matching criteria.</td></tr>`;
             return;
         }
 
@@ -354,7 +354,7 @@ export const usersController = {
     },
 
     async renderDetails(container, userKey) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading student dossier...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading student dossier...</div>`;
         try {
             // Lookup user by auth_id or doc $id
             let user = null;
@@ -463,7 +463,7 @@ export const usersController = {
                                 </div>
                                 <div class="p-0">
                                     ${attemptsRes.documents.length === 0 ? `
-                                        <div class="p-8 text-center text-slate-400 text-xs font-semibold">No recorded test sessions for this student.</div>
+                                        <div class="p-8 text-center text-white text-xs font-semibold">No recorded test sessions for this student.</div>
                                     ` : `
                                         <div class="table-responsive-wrapper">
                                             <table class="min-w-full divide-y divide-slate-100 text-xs">
@@ -503,7 +503,7 @@ export const usersController = {
                                 </div>
                                 <div class="p-0">
                                     ${ordersRes.documents.length === 0 ? `
-                                        <div class="p-8 text-center text-slate-400 text-xs font-semibold">No payment receipts submitted.</div>
+                                        <div class="p-8 text-center text-white text-xs font-semibold">No payment receipts submitted.</div>
                                     ` : `
                                         <ul class="divide-y divide-slate-100 text-xs">
                                             ${ordersRes.documents.map(ord => `

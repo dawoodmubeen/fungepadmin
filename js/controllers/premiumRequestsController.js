@@ -57,7 +57,7 @@ export const premiumRequestsController = {
                                 </tr>
                             </thead>
                             <tbody id="orders-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue...</td></tr>
+                                <tr><td colspan="7" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading orders queue...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -92,7 +92,7 @@ export const premiumRequestsController = {
     async loadAllOrders() {
         const tbody = document.getElementById('orders-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-white text-xs font-semibold uppercase">Loading orders queue from database...</td></tr>`;
         }
 
         try {
@@ -184,7 +184,7 @@ export const premiumRequestsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No matching premium orders found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-white text-xs font-semibold uppercase">No matching premium orders found.</td></tr>`;
             return;
         }
 
@@ -254,14 +254,14 @@ export const premiumRequestsController = {
     },
 
     async renderDetails(container, orderId) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold uppercase">Loading order telemetry...</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-white text-xs font-semibold uppercase">Loading order telemetry...</div>`;
         try {
             const req = await databases.getDocument(CONFIG.databaseId, CONFIG.premiumRequestsCol, orderId);
             const receiptViewUrl = req.receipt_file_id 
-                ? storage.getFileView(CONFIG.paymentReceiptsBucket, req.receipt_file_id).href
+                ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.paymentReceiptsBucket}/files/${req.receipt_file_id}/view?project=${CONFIG.projectId}`
                 : null;
             const receiptPreviewUrl = req.receipt_file_id
-                ? storage.getFilePreview(CONFIG.paymentReceiptsBucket, req.receipt_file_id, 1200, 0, 'center', 90).href
+                ? `${CONFIG.endpoint}/storage/buckets/${CONFIG.paymentReceiptsBucket}/files/${req.receipt_file_id}/preview?project=${CONFIG.projectId}&width=1200&quality=90`
                 : null;
 
             container.innerHTML = `

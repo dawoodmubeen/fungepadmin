@@ -240,7 +240,7 @@ class App {
         const mainView = document.getElementById('main-view');
         mainView.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20">
-                <div class="w-10 h-10 border-3 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+                <div class="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                 <p class="mt-4 text-xs font-semibold text-white tracking-wider uppercase">Loading Workbench...</p>
             </div>
         `;

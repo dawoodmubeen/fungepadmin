@@ -50,13 +50,14 @@ export const premiumRequestsController = {
                                     <th>Student & Contact</th>
                                     <th>Order Reference & TID</th>
                                     <th>Payable Amount</th>
+                                    <th>Receipt</th>
                                     <th>Submitted At</th>
                                     <th>Status</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue...</td></tr>
+                                <tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -91,7 +92,7 @@ export const premiumRequestsController = {
     async loadAllOrders() {
         const tbody = document.getElementById('orders-tbody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue from database...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading orders queue from database...</td></tr>`;
         }
 
         try {
@@ -103,7 +104,7 @@ export const premiumRequestsController = {
             console.error("Failed to load orders:", error);
             showToast("Failed to load orders", "error");
             if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading orders.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-rose-500 text-xs font-semibold">Error loading orders.</td></tr>`;
             }
         }
     },
@@ -183,7 +184,7 @@ export const premiumRequestsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No matching premium orders found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No matching premium orders found.</td></tr>`;
             return;
         }
 
@@ -216,6 +217,16 @@ export const premiumRequestsController = {
                     <td class="table-cell text-xs">
                         <p class="font-extrabold text-slate-900 text-sm">PKR ${ord.final_amount || ord.amount || 1500}</p>
                         ${ord.coupon_code ? `<span class="text-[10px] font-bold text-emerald-600">Promo: ${ord.coupon_code}</span>` : `<span class="text-[10px] text-slate-400">Regular Plan</span>`}
+                    </td>
+
+                    <!-- Receipt -->
+                    <td class="table-cell">
+                        ${ord.receipt_file_id ? `
+                            <a href="${CONFIG.endpoint}/storage/buckets/${CONFIG.paymentReceiptsBucket}/files/${ord.receipt_file_id}/view?project=${CONFIG.projectId}" target="_blank" class="px-2 py-1 rounded-md bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold text-[10px] flex items-center gap-1 w-fit transition">
+                                <i data-lucide="image" class="w-3 h-3"></i>
+                                View Slip
+                            </a>
+                        ` : `<span class="text-[10px] text-slate-400">No slip</span>`}
                     </td>
 
                     <!-- Date -->

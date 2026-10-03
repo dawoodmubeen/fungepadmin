@@ -66,7 +66,8 @@ export const attemptsController = {
                         <table class="min-w-full divide-y divide-slate-100">
                             <thead class="table-header">
                                 <tr>
-                                    <th>Student & Attempt ID</th>
+                                    <th>User Name</th>
+                                    <th>User ID</th>
                                     <th>Test Exam Title</th>
                                     <th>Telemetry Progress</th>
                                     <th>Marks & Percentage</th>
@@ -76,7 +77,7 @@ export const attemptsController = {
                                 </tr>
                             </thead>
                             <tbody id="attempts-tbody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading telemetry...</td></tr>
+                                <tr><td colspan="8" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">Loading telemetry...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -170,9 +171,22 @@ export const attemptsController = {
 
     async loadAttempts() {
         try {
-            this.attemptsData = await fetchAllDocuments(CONFIG.databaseId, CONFIG.testAttemptsCol, [
-                Query.orderDesc('started_at')
+            const [attemptsData, usersData] = await Promise.all([
+                fetchAllDocuments(CONFIG.databaseId, CONFIG.testAttemptsCol, [
+                    Query.orderDesc('started_at')
+                ]),
+                fetchAllDocuments(CONFIG.databaseId, CONFIG.usersCol)
             ]);
+
+            this.attemptsData = attemptsData;
+
+            this.userMap = {};
+            if (usersData && usersData.length > 0) {
+                usersData.forEach(u => {
+                    const id = u.auth_id || u.$id;
+                    this.userMap[id] = u.full_name || (u.email ? u.email.split('@')[0] : 'Student');
+                });
+            }
 
             // Compute summary
             let inProgress = 0;
@@ -181,6 +195,8 @@ export const attemptsController = {
             let pctCount = 0;
 
             this.attemptsData.forEach(a => {
+                a.user_name = (this.userMap && a.user_id && this.userMap[a.user_id]) ? this.userMap[a.user_id] : 'Anonymous';
+
                 if (a.status === 'in_progress') inProgress++;
                 if (a.status === 'completed') {
                     completed++;
@@ -220,7 +236,7 @@ export const attemptsController = {
             return true;
         };
 
-        const searchFields = ['test_title', 'user_id', '$id'];
+        const searchFields = ['test_title', 'user_id', '$id', 'user_name'];
 
         const result = filterAndPaginate(this.attemptsData, {
             searchQuery: q,
@@ -251,7 +267,7 @@ export const attemptsController = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No attempt sessions found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-400 text-xs font-semibold uppercase">No attempt sessions found.</td></tr>`;
             return;
         }
 
@@ -272,10 +288,15 @@ export const attemptsController = {
 
             return `
                 <tr class="table-row">
-                    <!-- Student / Attempt ID -->
+                    <!-- User Name -->
+                    <td class="table-cell">
+                        <span class="font-bold text-slate-900 text-xs">${att.user_name || 'Anonymous'}</span>
+                    </td>
+
+                    <!-- User ID / Attempt ID -->
                     <td class="table-cell">
                         <div class="flex flex-col">
-                            <span class="font-bold text-slate-900 text-xs">Student ID: ${att.user_id ? att.user_id.substring(0, 12) + '...' : 'Anonymous'}</span>
+                            <span class="font-mono text-slate-900 text-[10px]">ID: ${att.user_id ? att.user_id.substring(0, 12) + '...' : 'N/A'}</span>
                             <span class="font-mono text-[10px] text-slate-400 truncate max-w-[140px]">${att.$id}</span>
                         </div>
                     </td>

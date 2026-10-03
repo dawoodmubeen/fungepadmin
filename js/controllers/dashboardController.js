@@ -36,9 +36,9 @@ export const dashboardController = {
                 </div>
 
                 <!-- Executive 5 KPI Metric Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="kpi-metrics-grid">
+                <div class="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto pb-4 snap-x" id="kpi-metrics-grid" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
                     ${Array(5).fill(0).map(() => `
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs animate-pulse">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs animate-pulse min-w-[240px] lg:min-w-0 snap-center">
                             <div class="w-8 h-8 bg-slate-200 rounded-xl mb-3"></div>
                             <div class="h-3 bg-slate-200 rounded w-2/3 mb-2"></div>
                             <div class="h-6 bg-slate-200 rounded w-1/2"></div>
@@ -183,7 +183,7 @@ export const dashboardController = {
             if (kpiGrid) {
                 kpiGrid.innerHTML = `
                     <!-- 1. Total Registered Students -->
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between min-w-[240px] lg:min-w-0 snap-center">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Students</span>
                             <div class="p-2 rounded-xl bg-sky-50 text-sky-600">
@@ -197,7 +197,7 @@ export const dashboardController = {
                     </div>
 
                     <!-- 2. Active Premium -->
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between min-w-[240px] lg:min-w-0 snap-center">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Active Premium</span>
                             <div class="p-2 rounded-xl bg-amber-50 text-amber-600">
@@ -211,7 +211,7 @@ export const dashboardController = {
                     </div>
 
                     <!-- 3. Pending Receipts -->
-                    <div class="bg-white p-5 rounded-2xl border ${pendingOrders > 0 ? 'border-amber-300 ring-2 ring-amber-400/20 bg-amber-50/20' : 'border-slate-200/80'} shadow-xs flex flex-col justify-between">
+                    <div class="bg-white p-5 rounded-2xl border ${pendingOrders > 0 ? 'border-amber-300 ring-2 ring-amber-400/20 bg-amber-50/20' : 'border-slate-200/80'} shadow-xs flex flex-col justify-between min-w-[240px] lg:min-w-0 snap-center">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Pending Orders</span>
                             <div class="p-2 rounded-xl ${pendingOrders > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}">
@@ -225,7 +225,7 @@ export const dashboardController = {
                     </div>
 
                     <!-- 4. Total Mock Attempts -->
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between min-w-[240px] lg:min-w-0 snap-center">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Exam Attempts</span>
                             <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600">
@@ -239,7 +239,7 @@ export const dashboardController = {
                     </div>
 
                     <!-- 5. Estimated Revenue -->
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between col-span-2 md:col-span-1">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between min-w-[240px] lg:min-w-0 snap-center col-span-2 md:col-span-1">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Est. Revenue</span>
                             <div class="p-2 rounded-xl bg-emerald-50 text-emerald-600">

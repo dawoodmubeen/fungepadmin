@@ -514,6 +514,11 @@ export const usersController = {
                                                     </div>
                                                     <div class="flex items-center gap-3">
                                                         <span class="badge ${ord.status === 'approved' ? 'badge-success' : (ord.status === 'rejected' ? 'badge-error' : 'badge-warning')} capitalize">${ord.status}</span>
+                                                        ${ord.receipt_file_id ? `
+                                                            <a href="${CONFIG.endpoint}/storage/buckets/${CONFIG.paymentReceiptsBucket}/files/${ord.receipt_file_id}/view?project=${CONFIG.projectId}" target="_blank" class="px-2 py-1 rounded-md bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold text-[10px] flex items-center gap-1 w-fit transition">
+                                                                <i data-lucide="image" class="w-3 h-3"></i> Slip
+                                                            </a>
+                                                        ` : ''}
                                                         <a href="#premium-requests/view/${ord.$id}" class="text-sky-600 font-bold hover:underline">Review</a>
                                                     </div>
                                                 </li>
